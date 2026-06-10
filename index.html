@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#185FA5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Financije">
+<link rel="manifest" href="/Financije-NB/manifest.json">
+<title>Financije</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #ebebeb;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --border: #e0e0e0;
+  --border-light: #efefef;
+  --accent: #185FA5;
+  --green: #1D9E75;
+  --red: #D85A30;
+  --orange-bg: #FFF8ED;
+  --orange-border: #F5D9A8;
+  --orange-text: #854F0B;
+  --orange-dark: #6B3D08;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --nav-height: 62px;
+  --header-height: 52px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1c1c1e;
+    --bg-secondary: #2c2c2e;
+    --bg-tertiary: #111111;
+    --text-primary: #f0f0f0;
+    --text-secondary: #8e8e93;
+    --border: #3a3a3c;
+    --border-light: #2c2c2e;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg-tertiary); }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; color: var(--text-primary); }
+
+/* ====== LOCK SCREEN ====== */
+#lockScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(160deg, #0f3460 0%, #185FA5 60%, #1D9E75 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+}
+.lock-logo { width: 72px; height: 72px; background: rgba(255,255,255,0.15); border-radius: 22px; display: flex; align-items: center; justify-content: center; }
+.lock-logo i { font-size: 38px; color: #fff; }
+.lock-title { font-size: 24px; font-weight: 600; color: #fff; }
+.lock-sub { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: -20px; }
+.lock-fp-btn {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.4);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+.lock-fp-btn:hover, .lock-fp-btn:active { background: rgba(255,255,255,0.28); transform: scale(0.96); }
+.lock-fp-btn i { font-size: 36px; color: #fff; }
+.lock-fp-label { font-size: 13px; color: rgba(255,255,255,0.7); }
+.lock-pin-row { display: flex; gap: 12px; }
+.lock-pin-dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.3); border: 1.5px solid rgba(255,255,255,0.6); transition: background 0.15s; }
+.lock-pin-dot.filled { background: #fff; }
+.lock-numpad { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+.lock-key {
+  height: 72px; border-radius: 50%; background: rgba(255,255,255,0.12);
+  border: none; color: #fff; font-size: 22px; font-weight: 500; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  transition: background 0.1s, transform 0.1s;
+}
+.lock-key:active { background: rgba(255,255,255,0.25); transform: scale(0.94); }
+.lock-key .sub { font-size: 9px; letter-spacing: 1px; opacity: 0.6; }
+.lock-key.del { font-size: 18px; }
+.lock-error { font-size: 13px; color: #ff6b6b; font-weight: 500; min-height: 18px; }
+.lock-setup { font-size: 13px; color: rgba(255,255,255,0.6); text-decoration: underline; cursor: pointer; margin-top: -16px; }
+
+/* ====== APP SHELL ====== */
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+.header {
+  height: var(--header-height); background: var(--bg-primary);
+  border-bottom: 0.5px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; padding: 0 16px; justify-content: space-between;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.back-btn { background: none; border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.header-title { font-size: 16px; font-weight: 500; }
+.header-actions { display: flex; align-items: center; gap: 8px; }
+.month-nav { display: flex; align-items: center; gap: 10px; }
+.month-btn { background: none; border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; color: var(--text-primary); font-size: 13px; }
+.month-btn:disabled { opacity: 0.3; cursor: default; }
+.month-title { font-size: 15px; font-weight: 500; min-width: 140px; text-align: center; }
+.icon-btn { background: none; border: 0.5px solid var(--border); border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 17px; }
+.icon-btn:hover { background: var(--bg-secondary); }
+.icon-btn.active { color: var(--accent); border-color: var(--accent); }
+.content { flex: 1; overflow-y: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+.bottom-nav {
+  height: var(--nav-height); background: var(--bg-primary);
+  border-top: 0.5px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: stretch;
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 8px 2px 6px; cursor: pointer; gap: 3px; border-top: 2px solid transparent;
+  transition: background 0.1s;
+}
+.nav-item:hover { background: var(--bg-secondary); }
+.nav-item.active { border-top-color: var(--accent); }
+.nav-item.active .nav-icon, .nav-item.active .nav-label { color: var(--accent); }
+.nav-icon { font-size: 20px; color: var(--text-secondary); }
+.nav-label { font-size: 9px; color: var(--text-secondary); white-space: nowrap; }
+
+/* ====== BLUR / HIDE ====== */
+.blurable { transition: filter 0.3s; }
+body.hidden-mode .blurable { filter: blur(8px); user-select: none; }
+
+/* ====== COMMON COMPONENTS ====== */
+.section { background: var(--bg-primary); margin: 8px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; }
+.section-header { padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); }
+.section-title { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; display: flex; align-items: center; gap: 6px; }
+.section-total { font-size: 13px; font-weight: 500; }
+.row { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 0.5px solid var(--border-light); }
+.row:last-child { border-bottom: none; }
+.row-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.row-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.row-icon.sm { width: 28px; height: 28px; border-radius: 8px; font-size: 13px; }
+.row-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+.row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.row-amount { font-size: 14px; font-weight: 500; }
+.row-amount.zero { color: var(--text-secondary); font-weight: 400; font-size: 13px; }
+.green { color: var(--green); }
+.red { color: var(--red); }
+.blue { color: var(--accent); }
+.orange { color: var(--orange-text); }
+.edit-btn { background: none; border: 0.5px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; color: var(--text-secondary); white-space: nowrap; }
+.edit-btn:hover { background: var(--bg-secondary); }
+.del-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); opacity: 0.3; padding: 4px; font-size: 13px; }
+.del-btn:hover { opacity: 1; color: var(--red); }
+.edit-row { background: var(--bg-secondary); padding: 10px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.amount-input { flex: 1; font-size: 15px; padding: 8px 12px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
+.save-btn { padding: 8px 16px; font-size: 13px; border: none; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 500; }
+.cancel-btn { padding: 8px 10px; font-size: 13px; border: 0.5px solid var(--border); border-radius: 8px; background: none; cursor: pointer; color: var(--text-secondary); }
+.prog-wrap { padding: 0 16px 10px; }
+.prog-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 2px; }
+.add-trigger { margin: 8px; width: calc(100% - 16px); padding: 11px 16px; background: var(--bg-primary); border: 0.5px dashed var(--border); border-radius: var(--radius-lg); cursor: pointer; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+.add-trigger:hover { background: var(--bg-secondary); }
+.add-form { margin: 8px; background: var(--bg-primary); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.add-form-row { padding: 10px 16px; display: flex; gap: 8px; align-items: center; border-bottom: 0.5px solid var(--border-light); }
+.add-form-row:last-child { border-bottom: none; }
+.text-input { flex: 1; font-size: 13px; padding: 7px 10px; border: 0.5px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); outline: none; }
+.text-input:focus { border-color: var(--accent); }
+.form-actions { display: flex; gap: 8px; padding: 10px 16px; }
+.btn-primary { flex:1; padding:9px; font-size:13px; border:none; border-radius:8px; background:var(--accent); color:#fff; cursor:pointer; font-weight:500; }
+.btn-secondary { padding:9px 14px; font-size:13px; border:0.5px solid var(--border); border-radius:8px; background:none; cursor:pointer; color:var(--text-secondary); }
+.badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:500; }
+.badge.pos { background:#E1F5EE; color:#0F6E56; }
+.badge.neg { background:#FBEAE3; color:#8F3A1A; }
+.badge.neu { background:var(--bg-secondary); color:var(--text-secondary); }
+.total-banner { margin: 8px; border-radius: var(--radius-lg); border: 0.5px solid; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+.chevron { transition: transform 0.2s; display: inline-block; font-size: 14px; color: var(--text-secondary); }
+.chevron.open { transform: rotate(180deg); }
+.meter-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+.meter-fill { height: 100%; border-radius: 4px; background: var(--green); }
+
+/* ====== PREGLED ====== */
+.neto-hero { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; }
+.neto-top { padding: 18px 16px 14px; }
+.hero-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+.hero-val { font-size: 36px; font-weight: 500; letter-spacing: -0.5px; }
+.hero-vs { margin-top: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+.bd-toggle { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 0.5px solid var(--border); cursor: pointer; background: var(--bg-secondary); }
+.bd-toggle:hover { filter: brightness(0.97); }
+.bd-body { border-top: 0.5px solid var(--border); }
+.bd-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 16px; border-bottom: 0.5px solid var(--border-light); font-size: 13px; }
+.bd-row:last-child { border-bottom: none; }
+.bd-label { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+.bd-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pvr-card { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 14px 16px; }
+.pvr-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.pvr-col { flex: 1; }
+.pvr-col-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.pvr-col-val { font-size: 20px; font-weight: 500; }
+.pvr-bar-bg { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 4px; }
+.pvr-bar-p { height: 100%; background: var(--green); border-radius: 4px 0 0 4px; }
+.pvr-bar-r { height: 100%; background: var(--red); border-radius: 0 4px 4px 0; }
+.pvr-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); }
+.pvr-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 0.5px solid var(--border); font-size: 13px; }
+.portfelj-card { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+.stopa-card { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 14px 16px; }
+.cmp-section { background: var(--bg-primary); margin: 8px; border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; }
+.cmp-row { display: flex; align-items: center; padding: 11px 16px; border-bottom: 0.5px solid var(--border-light); gap: 10px; }
+.cmp-row:last-child { border-bottom: none; }
+.cmp-vals { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+/* ====== PRIHODI ====== */
+.income-banner { margin: 8px; background: #E1F5EE; border-radius: var(--radius-lg); border: 0.5px solid #9FE1CB; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+
+/* ====== RASHODI + OSTALO ====== */
+.ostalo-header { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 0.5px solid var(--border-light); cursor: pointer; }
+.ostalo-header:hover, .ostalo-header.open { background: var(--bg-secondary); }
+.sub-section { background: var(--bg-secondary); }
+.sub-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 16px 9px 22px; border-bottom: 0.5px solid var(--border-light); }
+.sub-row:last-child { border-bottom: none; }
+.sub-edit-row { background: var(--bg-primary); padding: 9px 16px 9px 22px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.sub-add-row { padding: 9px 16px 9px 22px; display: flex; gap: 8px; align-items: center; border-top: 0.5px dashed var(--border); }
+.sub-total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--bg-primary); border-top: 0.5px solid var(--border); font-size: 13px; font-weight: 500; }
+
+/* ====== REZIJE ====== */
+.rezije-banner { margin: 8px; background: var(--orange-bg); border-radius: var(--radius-lg); border: 0.5px solid var(--orange-border); padding: 14px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+.history-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 16px; border-bottom: 0.5px solid var(--border-light); font-size: 13px; cursor: pointer; }
+.history-row:last-child { border-bottom: none; }
+.history-row.active { background: var(--bg-secondary); }
+.history-row:hover { background: var(--bg-secondary); }
+
+/* ====== STEDNJA + PORTFELJ ====== */
+.group-header { padding: 9px 16px; display: flex; align-items: center; gap: 6px; border-bottom: 0.5px solid var(--border); background: var(--bg-secondary); }
+.group-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+.group-total { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--accent); }
+.acc-row { padding: 11px 16px; border-bottom: 0.5px solid var(--border-light); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.acc-row:last-child { border-bottom: none; }
+.acc-row:hover { background: var(--bg-secondary); }
+.stednja-banner { margin: 8px; background: #E6F1FB; border-radius: var(--radius-lg); border: 0.5px solid #B5D4F4; padding: 14px 16px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.stat-card { background: var(--bg-secondary); border-radius: 8px; padding: 9px 11px; }
+.stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px; }
+.stat-val { font-size: 14px; font-weight: 500; }
+.detail-hero { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 16px; }
+.chart-section { margin: 8px; background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; }
+.holding-row { padding: 10px 16px; border-bottom: 0.5px solid var(--border-light); display: flex; align-items: center; gap: 10px; }
+.holding-row:last-child { border-bottom: none; }
+.holding-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:0.3}50%{opacity:1} }
+.refresh-btn { background: none; border: 0.5px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="lockScreen">
+  <div class="lock-logo"><i class="ti ti-wallet"></i></div>
+  <div class="lock-title">Financije</div>
+  <div class="lock-sub">Unesi PIN ili koristi otisak prsta</div>
+  <div class="lock-pin-row" id="pinDots">
+    <div class="lock-pin-dot" id="d0"></div>
+    <div class="lock-pin-dot" id="d1"></div>
+    <div class="lock-pin-dot" id="d2"></div>
+    <div class="lock-pin-dot" id="d3"></div>
+  </div>
+  <div class="lock-error" id="pinError"></div>
+  <div class="lock-numpad" id="numpad"></div>
+  <div class="lock-setup" id="setupLink" onclick="startPinSetup()">Postavi PIN</div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <div class="header" id="appHeader"></div>
+  <div class="content" id="appContent"></div>
+  <nav class="bottom-nav" id="bottomNav">
+    <div class="nav-item active" id="nav-pregled" onclick="goTo('pregled')">
+      <i class="ti ti-layout-dashboard nav-icon"></i><span class="nav-label">Pregled</span>
+    </div>
+    <div class="nav-item" id="nav-prihodi" onclick="goTo('prihodi')">
+      <i class="ti ti-arrow-down-circle nav-icon"></i><span class="nav-label">Prihodi</span>
+    </div>
+    <div class="nav-item" id="nav-rashodi" onclick="goTo('rashodi')">
+      <i class="ti ti-arrow-up-circle nav-icon"></i><span class="nav-label">Rashodi</span>
+    </div>
+    <div class="nav-item" id="nav-rezije" onclick="goTo('rezije')">
+      <i class="ti ti-bolt nav-icon"></i><span class="nav-label">Režije</span>
+    </div>
+    <div class="nav-item" id="nav-stednja" onclick="goTo('stednja')">
+      <i class="ti ti-piggy-bank nav-icon"></i><span class="nav-label">Štednja</span>
+    </div>
+  </nav>
+</div>
+
+<script>
+'use strict';
+// ============================================================
+// CONSTANTS
+// ============================================================
+const MONTHS = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
+const MS = ['Sij','Velj','Ožu','Tra','Svi','Lip','Srp','Kol','Ruj','Lis','Stu','Pro'];
+const YEAR = 2026;
+
+// ============================================================
+// STATE
+// ============================================================
+let currentScreen = 'pregled';
+let currentMonth  = (new Date().getMonth());
+let hiddenMode    = false;
+let detailAccId   = null;
+let breakdownOpen = false;
+let ostaloOpen    = false;
+let editingKey    = null;
+let editingSubKey = null;
+let showAddMain   = false;
+let showAddSub    = false;
+let showAddIncome = false;
+let showAddRezije = false;
+let showAddHolding= false;
+let loadingPrices = false;
+let eurUsdRate    = 1.08;
+let pinSetupMode  = false;
+let pinSetupStep  = 0;
+let pinSetupFirst = '';
+let pinEntry      = '';
+
+// ============================================================
+// DATA — default (overwritten by localStorage on load)
+// ============================================================
+function defaultMonthData() {
+  return {
+    income:   { placa:0, najamnina:0, bonus:0, regres:0, bozicnica:0, poklon:0, ostalo:0, custom:{} },
+    expenses: { domacinstvo:0, stednja:0, mastercard:0, prijevoz:0, mobitel:0, custom:{} },
+    ostalo:   { sport:0, hrana:0, izlazak:0, odjeca:0, zdravlje:0, auto:0, poklon:0, ivan:0, youtube:0, ostalo:0, custom:{} },
+    rezije:   { hep:0, termoplin:0, magic:0, kom:0, varkom:0, cistoca:0, custom:{} },
+    pocetno:  0,
+  };
+}
+
+// Pre-fill first 5 months with demo data
+const DEMO = [
+  { income:{ placa:2203.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:365,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:104.68,hrana:10,izlazak:20,odjeca:0,zdravlje:45,auto:0,poklon:0,ivan:117,youtube:0,ostalo:20,custom:{} }, rezije:{ hep:43.67,termoplin:39.52,magic:17.93,kom:16.53,varkom:18.92,cistoca:13.15,custom:{} }, pocetno:365 },
+  { income:{ placa:2155.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:10,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:80,odjeca:0,zdravlje:25,auto:0,poklon:88,ivan:50,youtube:0,ostalo:147,custom:{} }, rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:135 },
+  { income:{ placa:2203,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:732,custom:{} }, expenses:{ domacinstvo:550,stednja:1455,mastercard:120,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:42,odjeca:0,zdravlje:13,auto:0,poklon:58,ivan:75,youtube:0,ostalo:250,custom:{} }, rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:70 },
+  { income:{ placa:2181,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:500,stednja:1455,mastercard:200,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:55,odjeca:0,zdravlje:25,auto:75,poklon:80,ivan:118,youtube:0,ostalo:70,custom:{} }, rezije:{ hep:0,termoplin:0,magic:0,kom:0,varkom:0,cistoca:0,custom:{} }, pocetno:270 },
+  { income:{ placa:2203,najamnina:0,bonus:1800,regres:0,bozicnica:0,poklon:0,ostalo:1434,custom:{} }, expenses:{ domacinstvo:550,stednja:4055,mastercard:250,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:58.2,odjeca:20,zdravlje:0,auto:0,poklon:55,ivan:45,youtube:0,ostalo:290.9,custom:{} }, rezije:{ hep:36.91,termoplin:51,magic:17.93,kom:16.53,varkom:18.92,cistoca:17.24,custom:{} }, pocetno:115 },
+];
+
+let appData = {};
+function initData() {
+  const saved = localStorage.getItem('fin_data_'+YEAR);
+  if (saved) { try { appData = JSON.parse(saved); } catch(e) {} }
+  for (let m=0; m<12; m++) {
+    if (!appData[m]) {
+      appData[m] = m < DEMO.length ? JSON.parse(JSON.stringify(DEMO[m])) : defaultMonthData();
+    }
+  }
+}
+function saveData() {
+  localStorage.setItem('fin_data_'+YEAR, JSON.stringify(appData));
+}
+
+// savings portfolio (separate — stays across months, tracks cumulative)
+const DEFAULT_PORTFOLIO = {
+  accounts: [
+    { id:'go',   label:'GO (gotovina)',       icon:'ti-cash',              bg:'#E1F5EE',tc:'#0F6E56',group:'likvidno',  type:'cash',    history:[0,110,165,165,1995,0,0,0,0,0,0,0], holdings:[] },
+    { id:'rba',  label:'RBA račun',           icon:'ti-building-bank',     bg:'#E6F1FB',tc:'#185FA5',group:'likvidno',  type:'cash',    history:[1200,1200,1200,1200,1200,0,0,0,0,0,0,0], holdings:[] },
+    { id:'ib',   label:'Interactive Brokers', icon:'ti-chart-candlestick', bg:'#EEEDFE',tc:'#534AB7',group:'invest',    type:'stocks',  history:[0,0,0,0,6500,0,0,0,0,0,0,0], holdings:[
+      { id:'h1',ticker:'VOO', isin:'US9229083632',name:'Vanguard S&P 500 ETF',qty:12, price:null,change:null },
+      { id:'h2',ticker:'AAPL',isin:'US0378331005',name:'Apple Inc.',         qty:8,  price:null,change:null },
+    ]},
+    { id:'ledger',label:'Ledger',             icon:'ti-cpu',               bg:'#FAEEDA',tc:'#854F0B',group:'invest',    type:'crypto',  history:[0,0,0,0,0,0,0,0,0,0,0,0], holdings:[
+      { id:'h3',symbol:'bitcoin',label:'BTC',name:'Bitcoin',qty:0.05,price:null,change:null },
+    ]},
+    { id:'oroceno',label:'Oročeno',           icon:'ti-lock',              bg:'#E1F5EE',tc:'#0F6E56',group:'oroceno',  type:'cash',    history:[15050,15050,15050,15050,19550,0,0,0,0,0,0,0], holdings:[] },
+    { id:'rba3', label:'RBA III. mirovinski', icon:'ti-shield-check',      bg:'#E6F1FB',tc:'#185FA5',group:'oroceno',  type:'cash',    history:[4200,4200,4200,4200,4200,0,0,0,0,0,0,0], holdings:[] },
+    { id:'ib_stocks',label:'Ivan Revolut — Dionice',icon:'ti-credit-card', bg:'#FBEAF0',tc:'#993556',group:'ivan',     type:'stocks',  history:[0,0,0,0,800,0,0,0,0,0,0,0], holdings:[
+      { id:'h6',ticker:'TSLA',isin:'US88160R1014',name:'Tesla Inc.',   qty:2,price:null,change:null },
+      { id:'h7',ticker:'NVDA',isin:'US67066G1040',name:'NVIDIA Corp.', qty:1,price:null,change:null },
+    ]},
+    { id:'ib_crypto',label:'Ivan Revolut — Kripto',icon:'ti-brand-revolut',bg:'#FBEAF0',tc:'#993556',group:'ivan',     type:'crypto',  history:[0,0,0,0,300,0,0,0,0,0,0,0], holdings:[
+      { id:'h8',symbol:'ethereum',label:'ETH',name:'Ethereum',qty:0.3,price:null,change:null },
+    ]},
+    { id:'ivan_bin',label:'Ivan Binance',     icon:'ti-currency-bitcoin',  bg:'#FAEEDA',tc:'#854F0B',group:'ivan',     type:'crypto',  history:[0,0,0,0,0,0,0,0,0,0,0,0], holdings:[
+      { id:'h9',symbol:'bitcoin',label:'BTC',name:'Bitcoin',qty:0.02,price:null,change:null },
+    ]},
+  ]
+};
+let portfolio = {};
+function initPortfolio() {
+  const s = localStorage.getItem('fin_portfolio');
+  if (s) { try { portfolio = JSON.parse(s); } catch(e) {} }
+  if (!portfolio.accounts) portfolio = JSON.parse(JSON.stringify(DEFAULT_PORTFOLIO));
+}
+function savePortfolio() { localStorage.setItem('fin_portfolio', JSON.stringify(portfolio)); }
+
+// ============================================================
+// LOCK / PIN
+// ============================================================
+const KEYS = [
+  {n:'1',s:''},{n:'2',s:'ABC'},{n:'3',s:'DEF'},
+  {n:'4',s:'GHI'},{n:'5',s:'JKL'},{n:'6',s:'MNO'},
+  {n:'7',s:'PQRS'},{n:'8',s:'TUV'},{n:'9',s:'WXYZ'},
+  {n:'',s:'fp'},{n:'0',s:''},{n:'⌫',s:'del'},
+];
+
+function buildNumpad() {
+  const np = document.getElementById('numpad');
+  np.innerHTML = '';
+  KEYS.forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'lock-key' + (k.s==='del'?' del':'');
+    if (k.s==='fp') {
+      btn.innerHTML = '<i class="ti ti-fingerprint" style="font-size:24px"></i>';
+      btn.onclick = tryBiometric;
+    } else if (k.s==='del') {
+      btn.innerHTML = '⌫';
+      btn.onclick = () => { pinEntry = pinEntry.slice(0,-1); updatePinDots(); };
+    } else {
+      btn.innerHTML = `${k.n}${k.s?`<span class="sub">${k.s}</span>`:''}`;
+      btn.onclick = () => enterDigit(k.n);
+    }
+    np.appendChild(btn);
+  });
+}
+
+function enterDigit(d) {
+  if (!d) return;
+  if (pinSetupMode) { enterSetupDigit(d); return; }
+  if (pinEntry.length >= 4) return;
+  pinEntry += d;
+  updatePinDots();
+  if (pinEntry.length === 4) setTimeout(checkPin, 100);
+}
+
+function updatePinDots() {
+  for (let i=0;i<4;i++) {
+    document.getElementById('d'+i).classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function checkPin() {
+  const stored = localStorage.getItem('fin_pin');
+  if (!stored) { unlock(); return; }
+  if (pinEntry === stored) { unlock(); }
+  else {
+    document.getElementById('pinError').textContent = 'Pogrešan PIN. Pokušaj ponovno.';
+    pinEntry = '';
+    updatePinDots();
+    setTimeout(() => document.getElementById('pinError').textContent = '', 2000);
+  }
+}
+
+function startPinSetup() {
+  pinSetupMode = true; pinSetupStep = 0; pinEntry = ''; pinSetupFirst = '';
+  document.getElementById('setupLink').style.display = 'none';
+  document.getElementById('pinError').textContent = '';
+  const dots = document.getElementById('pinDots');
+  dots.insertAdjacentHTML('afterend','<div id="setupLabel" style="font-size:13px;color:rgba(255,255,255,0.8);text-align:center">Unesi novi PIN (4 znamenke)</div>');
+  updatePinDots();
+}
+
+function enterSetupDigit(d) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += d; updatePinDots();
+  if (pinEntry.length === 4) {
+    setTimeout(() => {
+      if (pinSetupStep === 0) {
+        pinSetupFirst = pinEntry; pinEntry = ''; pinSetupStep = 1;
+        updatePinDots();
+        document.getElementById('setupLabel').textContent = 'Ponovi PIN za potvrdu';
+      } else {
+        if (pinEntry === pinSetupFirst) {
+          localStorage.setItem('fin_pin', pinEntry);
+          document.getElementById('setupLabel').textContent = '✓ PIN postavljen!';
+          setTimeout(() => { pinSetupMode=false; document.getElementById('setupLabel').remove(); document.getElementById('setupLink').style.display=''; pinEntry=''; updatePinDots(); }, 1000);
+        } else {
+          document.getElementById('setupLabel').textContent = 'PIN se ne podudaraju. Pokušaj opet.';
+          pinEntry=''; pinSetupFirst=''; pinSetupStep=0; updatePinDots();
+          setTimeout(()=>document.getElementById('setupLabel').textContent='Unesi novi PIN (4 znamenke)',1500);
+        }
+      }
+    }, 100);
+  }
+}
+
+async function tryBiometric() {
+  if (!window.PublicKeyCredential) { document.getElementById('pinError').textContent='Biometrija nije dostupna.'; return; }
+  // WebAuthn biometric — uses platform authenticator (fingerprint on Android)
+  try {
+    const stored = localStorage.getItem('fin_cred_id');
+    if (!stored) {
+      // Register
+      const cred = await navigator.credentials.create({ publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name:'Financije App' },
+        user: { id: new Uint8Array(16), name:'user', displayName:'Korisnik' },
+        pubKeyCredParams: [{ type:'public-key', alg:-7 },{ type:'public-key', alg:-257 }],
+        authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 30000,
+      }});
+      localStorage.setItem('fin_cred_id', btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+      unlock();
+    } else {
+      const credId = Uint8Array.from(atob(stored), c=>c.charCodeAt(0));
+      await navigator.credentials.get({ publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id:credId, type:'public-key' }],
+        userVerification: 'required',
+        timeout: 30000,
+      }});
+      unlock();
+    }
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') document.getElementById('pinError').textContent='Biometrija nije uspjela.';
+  }
+}
+
+function unlock() {
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  pinEntry = '';
+  render();
+  // auto-try biometric after short delay if supported
+}
+
+// Auto-lock after 5 min inactivity
+let lockTimer;
+function resetLockTimer() {
+  clearTimeout(lockTimer);
+  lockTimer = setTimeout(lockApp, 5 * 60 * 1000);
+}
+document.addEventListener('touchstart', resetLockTimer);
+document.addEventListener('click', resetLockTimer);
+
+function lockApp() {
+  document.getElementById('lockScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  pinEntry = ''; updatePinDots();
+}
+
+// ============================================================
+// FORMAT HELPERS
+// ============================================================
+function fmt(n, d=2) {
+  if (!n && n!==0) return '—';
+  return Math.abs(n).toLocaleString('hr',{minimumFractionDigits:d,maximumFractionDigits:d})+' €';
+}
+function fmtS(n) { return Math.round(Math.abs(n)).toLocaleString('hr')+' €'; }
+function fmtSigned(n) { return (n>=0?'+':'-')+fmtS(n); }
+function pct(a,b) { return b>0?(a/b*100):0; }
+function diffBadge(curr,prev,invert=false) {
+  if (prev==null||prev===0) return '';
+  const raw = (curr-prev)/Math.abs(prev)*100;
+  const disp = invert?-raw:raw;
+  const cls = disp>0?'pos':disp<0?'neg':'neu';
+  return `<span class="badge ${cls}">${raw>=0?'▲':'▼'} ${fmt(Math.abs(curr-prev))} (${raw>=0?'+':''}${raw.toFixed(1)}%)</span>`;
+}
+
+// ============================================================
+// DATA ACCESSORS
+// ============================================================
+function md(m=currentMonth) { return appData[m] || defaultMonthData(); }
+
+function totalIncome(m=currentMonth) {
+  const inc=md(m).income;
+  let t=['placa','najamnina','bonus','regres','bozicnica','poklon','ostalo'].reduce((s,k)=>s+(inc[k]||0),0);
+  Object.values(inc.custom||{}).forEach(v=>t+=(v.amount||0));
+  return t;
+}
+function totalExpenses(m=currentMonth) {
+  const exp=md(m).expenses;
+  let t=['domacinstvo','stednja','mastercard','prijevoz','mobitel'].reduce((s,k)=>s+(exp[k]||0),0);
+  Object.values(exp.custom||{}).forEach(v=>t+=(v.amount||0));
+  return t + totalOstalo(m);
+}
+function totalOstalo(m=currentMonth) {
+  const o=md(m).ostalo;
+  let t=['sport','hrana','izlazak','odjeca','zdravlje','auto','poklon','ivan','youtube','ostalo'].reduce((s,k)=>s+(o[k]||0),0);
+  Object.values(o.custom||{}).forEach(v=>t+=(v.amount||0));
+  return t;
+}
+function totalRezije(m=currentMonth) {
+  const r=md(m).rezije;
+  let t=['hep','termoplin','magic','kom','varkom','cistoca'].reduce((s,k)=>s+(r[k]||0),0);
+  Object.values(r.custom||{}).forEach(v=>t+=(v.amount||0));
+  return t;
+}
+function saldo(m=currentMonth) {
+  const d=md(m);
+  return d.pocetno + totalIncome(m) - (d.expenses.domacinstvo||0) - (d.expenses.stednja||0) - (d.expenses.mastercard||0) - (d.expenses.prijevoz||0) - (d.expenses.mobitel||0) - totalOstalo(m);
+}
+
+function liveAccVal(acc) {
+  if (acc.holdings&&acc.holdings.length>0&&acc.holdings.every(h=>h.price!=null))
+    return acc.holdings.reduce((s,h)=>s+h.price*h.qty,0);
+  return acc.history[Math.min(currentMonth,acc.history.length-1)]||0;
+}
+function totalPortfolioVal() { return portfolio.accounts.reduce((s,a)=>s+liveAccVal(a),0); }
+
+function setExpAmt(key,val) {
+  const exp=md().expenses;
+  if(exp[key]!==undefined) { exp[key]=val; } else if(exp.custom?.[key]) exp.custom[key].amount=val;
+  saveData();
+}
+function setOstaloAmt(key,val) {
+  const o=md().ostalo;
+  if(o[key]!==undefined) { o[key]=val; } else if(o.custom?.[key]) o.custom[key].amount=val;
+  saveData();
+}
+function setIncomeAmt(key,val) {
+  const inc=md().income;
+  if(inc[key]!==undefined) { inc[key]=val; } else if(inc.custom?.[key]) inc.custom[key].amount=val;
+  saveData();
+}
+function setRezijeAmt(key,val) {
+  const r=md().rezije;
+  if(r[key]!==undefined) { r[key]=val; } else if(r.custom?.[key]) r.custom[key].amount=val;
+  saveData();
+}
+
+// ============================================================
+// SPARKLINE
+// ============================================================
+function sparkline(vals,color,w=60,h=24) {
+  const v=vals.filter(x=>x!=null);
+  if(v.length<2)return '';
+  const min=Math.min(...v),max=Math.max(...v),range=max-min||1;
+  const pts=v.map((x,i)=>`${((i/(v.length-1))*w).toFixed(1)},${(h-((x-min)/range)*(h-4)-2).toFixed(1)}`).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function barChart(vals,color,w=316,h=80) {
+  const n=vals.length, bw=Math.floor((w-(n-1)*5)/n), max=Math.max(...vals,1);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${vals.map((v,i)=>{
+    const bh=Math.max(3,(v/max)*(h-18)),x=i*(bw+5),y=h-18-bh;
+    return `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${color}" opacity="${i===currentMonth?'1':'0.4'}"/>
+    <text x="${x+bw/2}" y="${h-3}" text-anchor="middle" font-size="9" fill="var(--text-secondary)">${MS[i]}</text>`;
+  }).join('')}</svg>`;
+}
+
+// ============================================================
+// LIVE PRICES
+// ============================================================
+async function fetchEurUsd() {
+  try { const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR');const d=await r.json();if(d.rates?.EUR)eurUsdRate=d.rates.EUR; }catch(e){}
+}
+async function fetchStock(ticker) {
+  try {
+    const url=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=2d`;
+    const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const o=await r.json();const d=JSON.parse(o.contents);
+    const m=d.chart.result[0].meta;
+    return {price:m.regularMarketPrice*eurUsdRate,change:m.chartPreviousClose?((m.regularMarketPrice-m.chartPreviousClose)/m.chartPreviousClose*100):null};
+  }catch(e){return{price:null,change:null};}
+}
+async function fetchCrypto(symbols) {
+  try{const r=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${symbols.join(',')}&vs_currencies=eur&include_24hr_change=true`);return await r.json();}catch(e){return{};}
+}
+async function refreshPrices() {
+  loadingPrices=true;render();
+  await fetchEurUsd();
+  const allStocks=portfolio.accounts.flatMap(a=>a.type==='stocks'?a.holdings:[]);
+  const allCrypto=portfolio.accounts.flatMap(a=>a.type==='crypto'?a.holdings:[]);
+  const cryptoData=await fetchCrypto([...new Set(allCrypto.map(h=>h.symbol))]);
+  allCrypto.forEach(h=>{if(cryptoData[h.symbol]){h.price=cryptoData[h.symbol].eur;h.change=cryptoData[h.symbol].eur_24h_change;}});
+  await Promise.all(allStocks.map(async h=>{const res=await fetchStock(h.ticker);h.price=res.price;h.change=res.change;}));
+  loadingPrices=false;savePortfolio();render();
+}
+
+// ============================================================
+// TOGGLE EDIT HELPERS
+// ============================================================
+function toggleEdit(key,type='exp') {
+  editingKey=editingKey===key?null:key;
+  render();
+  if(editingKey){setTimeout(()=>{const el=document.getElementById('ei-'+key);if(el){el.focus();el.select();}},60);}
+}
+function saveEdit(key,type='exp') {
+  const el=document.getElementById('ei-'+key);
+  const val=parseFloat(el?.value)||0;
+  if(type==='exp')setExpAmt(key,val);
+  else if(type==='inc')setIncomeAmt(key,val);
+  else if(type==='sub')setOstaloAmt(key,val);
+  else if(type==='rez')setRezijeAmt(key,val);
+  editingKey=null;render();
+}
+function toggleSubEdit(key) {
+  editingSubKey=editingSubKey===key?null:key;render();
+  if(editingSubKey){setTimeout(()=>{const el=document.getElementById('sei-'+key);if(el){el.focus();el.select();}},60);}
+}
+function saveSubEdit(key) {
+  const el=document.getElementById('sei-'+key);
+  setOstaloAmt(key,parseFloat(el?.value)||0);
+  editingSubKey=null;render();
+}
+
+// ============================================================
+// EDIT ROW HTML
+// ============================================================
+function editRowHtml(key,amt,type='exp',color='#D85A30') {
+  return `<div class="edit-row">
+    <input class="amount-input" id="ei-${key}" type="number" min="0" step="0.01" value="${amt||''}" placeholder="0.00"
+      onkeydown="if(event.key==='Enter')saveEdit('${key}','${type}')"
+      style="border-color:${color}" />
+    <span style="font-size:12px;color:var(--text-secondary)">€</span>
+    <button class="cancel-btn" onclick="editingKey=null;render()">✕</button>
+    <button class="save-btn" onclick="saveEdit('${key}','${type}')" style="background:${color}">Spremi</button>
+  </div>`;
+}
+function subEditRowHtml(key,amt) {
+  return `<div class="sub-edit-row">
+    <input class="amount-input" id="sei-${key}" type="number" min="0" step="0.01" value="${amt||''}" placeholder="0.00"
+      onkeydown="if(event.key==='Enter')saveSubEdit('${key}')"
+      style="border-color:#D85A30;font-size:13px;padding:6px 10px" />
+    <span style="font-size:12px;color:var(--text-secondary)">€</span>
+    <button class="cancel-btn" onclick="editingSubKey=null;render()" style="padding:6px 8px">✕</button>
+    <button class="save-btn" onclick="saveSubEdit('${key}')" style="background:#D85A30;padding:6px 12px">Spremi</button>
+  </div>`;
+}
+
+// ============================================================
+// REUSABLE ROW
+// ============================================================
+function makeRow({key,label,icon,bg,tc,amt,pct:p,sub,type,color,fixed=true,isEditing,editType}) {
+  const isZero=!amt;
+  return `
+  <div class="row" style="${isEditing?'border-bottom:none':''}">
+    <div class="row-left">
+      <div class="row-icon" style="background:${bg};color:${tc}"><i class="ti ${icon}"></i></div>
+      <div>
+        <div class="row-name">${label}</div>
+        <div class="row-sub">${isZero?'Nije uneseno':(p!=null?p.toFixed(1)+'% od ukupnog':(sub||''))}</div>
+      </div>
+    </div>
+    <div class="row-right">
+      <span class="row-amount ${isZero?'zero':''} blurable" style="${!isZero?'color:'+color:''}">${isZero?'—':fmt(amt)}</span>
+      <button class="edit-btn" onclick="toggleEdit('${key}','${editType||type}')">${isEditing?'Zatvori':'Uredi'}</button>
+      ${!fixed?`<button class="del-btn" onclick="deleteCat('${key}','${type}')"><i class="ti ti-x"></i></button>`:''}
+    </div>
+  </div>
+  ${isEditing?editRowHtml(key,amt,editType||type,color):''}
+  ${amt>0&&!isEditing?`<div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${p||0}%;background:${tc}"></div></div></div>`:''}`;
+}
+
+function deleteCat(key,type) {
+  if(type==='exp')delete md().expenses.custom[key];
+  else if(type==='inc')delete md().income.custom[key];
+  else if(type==='sub')delete md().ostalo.custom[key];
+  else if(type==='rez')delete md().rezije.custom[key];
+  saveData();render();
+}
+
+// ============================================================
+// SCREEN: PREGLED
+// ============================================================
+function renderPregled() {
+  const m=currentMonth,d=md();
+  const dp=m>0?md(m-1):null;
+  const sal=saldo(),salp=dp?saldo(m-1):null;
+  const salDiff=salp!=null?sal-salp:null;
+  const tI=totalIncome(),tR=totalExpenses(),tRez=totalRezije();
+  const tAll=tI+tR;
+  const pPct=tAll>0?pct(tI,tAll):50, rPct=100-pPct;
+  const s=pct(d.expenses.stednja,tI);
+  const sp=dp?pct(md(m-1).expenses.stednja,totalIncome(m-1)):null;
+  const tPort=totalPortfolioVal();
+  const portPrev=dp?portfolio.accounts.reduce((s,a)=>s+(a.history[Math.min(m-1,a.history.length-1)]||0),0):null;
+
+  let html='';
+
+  // SALDO HERO
+  html+=`<div class="neto-hero">
+    <div class="neto-top">
+      <div class="hero-label">Saldo</div>
+      <div class="hero-val blurable ${sal>=0?'green':'red'}">${sal>=0?'+':'–'}${fmt(sal)}</div>
+      <div class="hero-vs">
+        <span>vs ${dp?MS[m-1]:'—'}</span>
+        ${salDiff!=null?`<span class="badge ${salDiff>=0?'pos':'neg'}">${salDiff>=0?'▲':'▼'} ${fmt(Math.abs(salDiff))} (${salDiff>=0?'+':''}${(salp&&salp!==0?(salDiff/Math.abs(salp)*100):0).toFixed(1)}%)</span>`
+        :'<span class="badge neu">Nema prethodnog</span>'}
+      </div>
+    </div>
+    <div class="bd-toggle" onclick="breakdownOpen=!breakdownOpen;render()">
+      <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px"><i class="ti ti-calculator"></i>Prikaži izračun</span>
+      <i class="ti ti-chevron-down chevron ${breakdownOpen?'open':''}"></i>
+    </div>
+    ${breakdownOpen?`<div class="bd-body">
+      ${[['#94A3B8','Početno stanje',d.pocetno,true],
+         ['#1D9E75','Prihodi',tI,true],
+         ['#D85A30','Domačinstvo',d.expenses.domacinstvo,false],
+         ['#185FA5','Štednja',d.expenses.stednja,false],
+         ['#854F0B','Mastercard',d.expenses.mastercard,false],
+         ['#5F5E5A','Prijevoz',d.expenses.prijevoz,false],
+         ['#534AB7','Mobitel',d.expenses.mobitel,false],
+         ['#993556','Ostalo',totalOstalo(),false],
+        ].map(([c,l,v,add])=>`<div class="bd-row"><span class="bd-label"><span class="bd-dot" style="background:${c}"></span>${l}</span>
+        <span style="font-weight:500;color:${add?'#1D9E75':'#D85A30'}">${add?'+':'–'}${fmtS(v)}</span></div>`).join('')}
+      <div style="height:0.5px;background:var(--border);margin:0 16px"></div>
+      <div class="bd-row" style="background:var(--bg-secondary)">
+        <span style="font-weight:500">= Saldo</span>
+        <span class="blurable" style="font-weight:500;font-size:15px;color:${sal>=0?'#1D9E75':'#D85A30'}">${sal>=0?'+':'–'}${fmt(sal)}</span>
+      </div>
+    </div>`:''}
+  </div>`;
+
+  // P vs R
+  html+=`<div class="pvr-card">
+    <div class="pvr-row">
+      <div class="pvr-col"><div class="pvr-col-label">Prihodi</div><div class="pvr-col-val green blurable">${fmtS(tI)}</div></div>
+      <div class="pvr-col" style="text-align:right"><div class="pvr-col-label">Rashodi</div><div class="pvr-col-val red blurable">${fmtS(tR)}</div></div>
+    </div>
+    <div class="pvr-bar-bg"><div class="pvr-bar-p" style="width:${pPct.toFixed(1)}%"></div><div class="pvr-bar-r" style="width:${rPct.toFixed(1)}%"></div></div>
+    <div class="pvr-bar-labels" style="margin-bottom:10px"><span style="color:#1D9E75">${pPct.toFixed(0)}%</span><span style="color:#D85A30">${rPct.toFixed(0)}%</span></div>
+    <div class="pvr-footer"><span style="color:var(--text-secondary)">Rashodi / prihodi</span><span class="blue blurable">${pct(tR,tI).toFixed(1)}%</span></div>
+  </div>`;
+
+  // Portfelj
+  html+=`<div class="portfelj-card">
+    <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Ukupni portfelj</div>
+    <div style="font-size:22px;font-weight:500" class="blue blurable">${fmtS(tPort)}</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">
+      ${portPrev?`<span style="color:${tPort>=portPrev?'#1D9E75':'#D85A30'}">${tPort>=portPrev?'▲':'▼'} ${fmtS(Math.abs(tPort-portPrev))} vs ${MS[m-1]}</span>`:'Početni podatak'}
+    </div></div>
+    <div>${sparkline(portfolio.accounts[0].history.slice(0,m+1).map((_,i)=>portfolio.accounts.reduce((s,a)=>s+(a.history[i]||0),0)),'#185FA5',80,32)}</div>
+  </div>`;
+
+  // Stopa
+  html+=`<div class="stopa-card">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+      <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Stopa štednje</div>
+      <div style="font-size:22px;font-weight:500;color:#1D9E75" class="blurable">${s.toFixed(1)}%</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${sp!=null?`vs ${MS[m-1]}: <span style="color:${s>=sp?'#1D9E75':'#D85A30'}">${s>=sp?'▲':'▼'} ${Math.abs(s-sp).toFixed(1)} pp</span>`:'Nema prethodnog'}</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">Štednja</div><div style="font-size:16px;font-weight:500;color:#1D9E75" class="blurable">${fmtS(d.expenses.stednja)}</div></div>
+    </div>
+    <div class="meter-bar"><div class="meter-fill" style="width:${Math.min(100,s)}%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:4px"><span>0%</span><span>50%</span><span>100%</span></div>
+  </div>`;
+
+  // Usporedba
+  const CMP=[
+    {l:'Prihodi',fn:totalIncome,icon:'ti-arrow-down-circle',bg:'#E1F5EE',tc:'#0F6E56',inv:false},
+    {l:'Rashodi',fn:totalExpenses,icon:'ti-arrow-up-circle',bg:'#FBEAE3',tc:'#8F3A1A',inv:true},
+    {l:'Štednja',fn:m=>md(m).expenses.stednja,icon:'ti-piggy-bank',bg:'#E6F1FB',tc:'#185FA5',inv:false},
+    {l:'Saldo',fn:saldo,icon:'ti-wallet',bg:'#F1EFE8',tc:'#5F5E5A',inv:false},
+  ];
+  html+=`<div class="cmp-section">
+    <div class="section-header"><span class="section-title">Usporedba · ${MS[m]} vs ${dp?MS[m-1]:'—'}</span></div>
+    ${CMP.map(c=>{
+      const curr=c.fn(m),prev=dp?c.fn(m-1):null;
+      const rawPct=prev&&prev!==0?(curr-prev)/Math.abs(prev)*100:null;
+      const dispPct=c.inv&&rawPct!=null?-rawPct:rawPct;
+      const cls=dispPct==null?'neu':dispPct>0?'pos':dispPct<0?'neg':'neu';
+      const absDiff=prev!=null?curr-prev:null;
+      return `<div class="cmp-row">
+        <div class="row-icon" style="background:${c.bg};color:${c.tc}"><i class="ti ${c.icon}"></i></div>
+        <span style="font-size:13px;flex:1">${c.l}</span>
+        <div class="cmp-vals">
+          <span style="font-size:13px;font-weight:500;color:${c.l==='Saldo'?(curr>=0?'#1D9E75':'#D85A30'):'var(--text-primary)'}" class="blurable">${curr<0?'-':''}${fmtS(curr)}</span>
+          <span class="badge ${cls}" style="font-size:10px">${rawPct!=null?(rawPct>=0?'+':'')+rawPct.toFixed(1)+'% · '+(absDiff>=0?'+':'–')+fmt(Math.abs(absDiff)):'—'}</span>
+          <span style="font-size:11px;color:var(--text-secondary)">${prev!=null?fmtS(prev):'—'}</span>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  return html;
+}
+
+// ============================================================
+// SCREEN: PRIHODI
+// ============================================================
+const INCOME_CATS=[
+  {key:'placa',    label:'Plaća',     icon:'ti-briefcase',  bg:'#E1F5EE',tc:'#0F6E56'},
+  {key:'najamnina',label:'Najamnina', icon:'ti-home-dollar',bg:'#E6F1FB',tc:'#185FA5'},
+  {key:'bonus',    label:'Bonus',     icon:'ti-gift',       bg:'#FAEEDA',tc:'#854F0B'},
+  {key:'regres',   label:'Regres',    icon:'ti-beach',      bg:'#FBF0E6',tc:'#8F5E25'},
+  {key:'bozicnica',label:'Božićnica', icon:'ti-snowflake',  bg:'#EEEDFE',tc:'#534AB7'},
+  {key:'poklon',   label:'Poklon',    icon:'ti-heart',      bg:'#FBEAF0',tc:'#993556'},
+  {key:'ostalo',   label:'Ostalo',    icon:'ti-plus-circle',bg:'#F1EFE8',tc:'#5F5E5A'},
+];
+
+function renderPrihodi() {
+  const inc=md().income;
+  const tI=totalIncome();
+  const custom=Object.entries(inc.custom||{}).map(([k,v])=>({key:k,label:v.label,icon:'ti-tag',bg:'#F1EFE8',tc:'#5F5E5A',fixed:false,amount:v.amount||0}));
+  const cats=[...INCOME_CATS.map(c=>({...c,fixed:true})),...custom];
+
+  let html=`<div class="income-banner">
+    <span style="font-size:12px;color:#0F6E56;text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Ukupni prihodi</span>
+    <span style="font-size:22px;font-weight:500;color:#0F6E56" class="blurable">${fmtS(tI)}</span>
+  </div><div class="section">`;
+
+  cats.forEach(c=>{
+    const amt=c.fixed?(inc[c.key]||0):(c.amount||0);
+    const isEditing=editingKey===c.key;
+    html+=makeRow({key:c.key,label:c.label,icon:c.icon,bg:c.bg,tc:c.tc,amt,pct:tI>0&&amt>0?pct(amt,tI):null,type:'inc',editType:'inc',color:'#1D9E75',fixed:c.fixed,isEditing});
+  });
+  html+='</div>';
+
+  if(!showAddIncome) {
+    html+=`<button class="add-trigger" onclick="showAddIncome=true;render()"><i class="ti ti-plus"></i> Dodaj kategoriju prihoda</button>`;
+  } else {
+    html+=`<div class="add-form">
+      <div class="add-form-row"><i class="ti ti-tag" style="color:var(--text-secondary)"></i><input class="text-input" id="niName" placeholder="Naziv..." maxlength="30"/></div>
+      <div class="add-form-row"><i class="ti ti-currency-euro" style="color:var(--text-secondary)"></i><input class="text-input" id="niAmt" type="number" min="0" step="0.01" placeholder="Iznos (€)"/>
+      <button class="cancel-btn" onclick="showAddIncome=false;render()">✕</button>
+      <button class="btn-primary" style="flex:0;padding:7px 14px" onclick="addIncomeCat()">Dodaj</button></div>
+    </div>`;
+  }
+  return html;
+}
+
+function addIncomeCat() {
+  const name=document.getElementById('niName')?.value.trim();
+  if(!name)return;
+  const k='c_'+Date.now();
+  md().income.custom[k]={label:name,amount:parseFloat(document.getElementById('niAmt')?.value)||0};
+  showAddIncome=false;saveData();render();
+}
+
+// ============================================================
+// SCREEN: RASHODI
+// ============================================================
+const EXP_CATS=[
+  {key:'domacinstvo',label:'Domačinstvo',icon:'ti-home',         bg:'#E1F5EE',tc:'#0F6E56'},
+  {key:'stednja',    label:'Štednja',    icon:'ti-piggy-bank',   bg:'#E6F1FB',tc:'#185FA5'},
+  {key:'mastercard', label:'Mastercard', icon:'ti-credit-card',  bg:'#FAEEDA',tc:'#854F0B'},
+  {key:'prijevoz',   label:'Prijevoz',   icon:'ti-car',          bg:'#F1EFE8',tc:'#5F5E5A'},
+  {key:'mobitel',    label:'Mobitel',    icon:'ti-device-mobile',bg:'#EEEDFE',tc:'#534AB7'},
+];
+const OSTALO_CATS=[
+  {key:'sport',   label:'Sport',         icon:'ti-ball-football',bg:'#E1F5EE',tc:'#0F6E56'},
+  {key:'hrana',   label:'Hrana',         icon:'ti-bowl-spoon',   bg:'#FAEEDA',tc:'#854F0B'},
+  {key:'izlazak', label:'Izlazak',       icon:'ti-glass',        bg:'#FBEAF0',tc:'#993556'},
+  {key:'odjeca',  label:'Odjeća / Obuća',icon:'ti-shirt',        bg:'#EEEDFE',tc:'#534AB7'},
+  {key:'zdravlje',label:'Zdravlje',      icon:'ti-heart-plus',   bg:'#FBF0E6',tc:'#8F5E25'},
+  {key:'auto',    label:'Auto',          icon:'ti-car-garage',   bg:'#F1EFE8',tc:'#5F5E5A'},
+  {key:'poklon',  label:'Poklon',        icon:'ti-gift',         bg:'#FBEAF0',tc:'#993556'},
+  {key:'ivan',    label:'Ivan',          icon:'ti-user',         bg:'#E6F1FB',tc:'#185FA5'},
+  {key:'youtube', label:'YouTube',       icon:'ti-brand-youtube',bg:'#FBEAE3',tc:'#8F3A1A'},
+  {key:'ostalo',  label:'Ostalo',        icon:'ti-dots-circle',  bg:'#F1EFE8',tc:'#5F5E5A'},
+];
+
+function renderRashodi() {
+  const exp=md().expenses;
+  const tE=totalExpenses(), tO=totalOstalo();
+  const customExp=Object.entries(exp.custom||{}).map(([k,v])=>({key:k,label:v.label,icon:'ti-tag',bg:'#F1EFE8',tc:'#5F5E5A',fixed:false,amount:v.amount||0}));
+
+  let html=`<div class="total-banner" style="background:#FBEAE3;border-color:#F0B89E">
+    <span style="font-size:12px;color:#8F3A1A;text-transform:uppercase;letter-spacing:0.5px;font-weight:500">Ukupni rashodi</span>
+    <span style="font-size:22px;font-weight:500;color:#8F3A1A" class="blurable">${fmtS(tE)}</span>
+  </div><div class="section">`;
+
+  EXP_CATS.forEach(c=>{
+    const amt=exp[c.key]||0,isEditing=editingKey===c.key;
+    html+=makeRow({key:c.key,label:c.label,icon:c.icon,bg:c.bg,tc:c.tc,amt,pct:tE>0&&amt>0?pct(amt,tE):null,type:'exp',color:'#D85A30',fixed:true,isEditing});
+  });
+
+  // Custom main cats
+  customExp.forEach(c=>{
+    const isEditing=editingKey===c.key;
+    html+=makeRow({key:c.key,label:c.label,icon:c.icon,bg:c.bg,tc:c.tc,amt:c.amount,pct:tE>0&&c.amount>0?pct(c.amount,tE):null,type:'exp',color:'#D85A30',fixed:false,isEditing});
+  });
+
+  // OSTALO expandable
+  const oPct=tE>0?pct(tO,tE):0;
+  const activeSubs=OSTALO_CATS.filter(c=>(md().ostalo[c.key]||0)>0).length;
+  html+=`<div class="ostalo-header ${ostaloOpen?'open':''}" onclick="ostaloOpen=!ostaloOpen;render()">
+    <div class="row-left">
+      <div class="row-icon" style="background:#FBEAF0;color:#993556"><i class="ti ti-dots-circle"></i></div>
+      <div><div class="row-name">Ostalo</div>
+      <div class="row-sub">${tO>0?oPct.toFixed(1)+'% od ukupnog · '+activeSubs+' stavki':'Nije uneseno'}</div></div>
+    </div>
+    <div class="row-right">
+      <span class="row-amount blurable ${!tO?'zero':''}" style="${tO?'color:#D85A30':''}">${tO?fmt(tO):'—'}</span>
+      <i class="ti ti-chevron-down chevron ${ostaloOpen?'open':''}"></i>
+    </div>
+  </div>`;
+  if(tO>0&&!ostaloOpen)html+=`<div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${oPct}%;background:#993556"></div></div></div>`;
+  if(ostaloOpen)html+=renderOstaloSub(tE);
+  html+='</div>';
+
+  if(!showAddMain){
+    html+=`<button class="add-trigger" onclick="showAddMain=true;render()"><i class="ti ti-plus"></i> Dodaj kategoriju rashoda</button>`;
+  } else {
+    html+=`<div class="add-form">
+      <div class="add-form-row"><i class="ti ti-tag" style="color:var(--text-secondary)"></i><input class="text-input" id="nmName" placeholder="Naziv..." maxlength="30"/></div>
+      <div class="add-form-row"><i class="ti ti-currency-euro" style="color:var(--text-secondary)"></i><input class="text-input" id="nmAmt" type="number" min="0" step="0.01" placeholder="Iznos (€)"/>
+      <button class="cancel-btn" onclick="showAddMain=false;render()">✕</button>
+      <button class="btn-primary" style="flex:0;padding:7px 14px" onclick="addMainCat()">Dodaj</button></div>
+    </div>`;
+  }
+  return html;
+}
+
+function addMainCat() {
+  const name=document.getElementById('nmName')?.value.trim();
+  if(!name)return;
+  const k='c_'+Date.now();
+  md().expenses.custom[k]={label:name,amount:parseFloat(document.getElementById('nmAmt')?.value)||0};
+  showAddMain=false;saveData();render();
+}
+
+function renderOstaloSub(tE) {
+  const o=md().ostalo, tO=totalOstalo();
+  const customSub=Object.entries(o.custom||{}).map(([k,v])=>({key:k,label:v.label,icon:'ti-tag',bg:'#F1EFE8',tc:'#5F5E5A',fixed:false,amount:v.amount||0}));
+  let html='<div class="sub-section">';
+  [...OSTALO_CATS,...customSub].forEach(c=>{
+    const amt=c.fixed?(o[c.key]||0):(c.amount||0);
+    const isEditing=editingSubKey===c.key;
+    const p=tO>0&&amt>0?pct(amt,tO):null;
+    html+=`<div class="sub-row" style="${isEditing?'border-bottom:none':''}">
+      <div class="row-left">
+        <div class="row-icon sm" style="background:${c.bg};color:${c.tc}"><i class="ti ${c.icon}"></i></div>
+        <div><div style="font-size:13px;font-weight:400">${c.label}</div>
+        <div class="row-sub">${p?p.toFixed(1)+'% od Ostalog':'—'}</div></div>
+      </div>
+      <div class="row-right">
+        <span class="row-amount blurable ${!amt?'zero':''}" style="${amt?'color:#D85A30;font-size:13px':''}">${amt?fmt(amt):'—'}</span>
+        <button class="edit-btn" onclick="toggleSubEdit('${c.key}')">${isEditing?'Zatvori':'Uredi'}</button>
+        ${!c.fixed?`<button class="del-btn" onclick="deleteCat('${c.key}','sub')"><i class="ti ti-x"></i></button>`:''}
+      </div>
+    </div>
+    ${isEditing?subEditRowHtml(c.key,amt):''}
+    ${amt>0&&!isEditing&&p?`<div class="prog-wrap" style="padding-left:22px"><div class="prog-bar"><div class="prog-fill" style="width:${p}%;background:${c.tc}"></div></div></div>`:''}`;
+  });
+  html+=`<div class="sub-total-row"><span>Ukupno Ostalo</span><span class="blurable">${fmt(tO)}</span></div>`;
+  if(!showAddSub){
+    html+=`<div class="sub-add-row" style="cursor:pointer" onclick="showAddSub=true;render()"><i class="ti ti-plus" style="color:var(--text-secondary)"></i><span style="font-size:13px;color:var(--text-secondary)">Dodaj podkategoriju</span></div>`;
+  } else {
+    html+=`<div class="sub-add-row">
+      <input class="text-input" id="nsName" placeholder="Naziv..." maxlength="30" style="font-size:12px;padding:5px 8px"/>
+      <input class="text-input" id="nsAmt" type="number" min="0" step="0.01" placeholder="€" style="width:70px;flex:none;font-size:12px;padding:5px 8px"/>
+      <button class="cancel-btn" onclick="showAddSub=false;render()" style="padding:5px 8px">✕</button>
+      <button class="save-btn" onclick="addSubCat()" style="background:#D85A30;padding:5px 10px;font-size:12px">Dodaj</button>
+    </div>`;
+  }
+  html+='</div>';
+  return html;
+}
+
+function addSubCat() {
+  const name=document.getElementById('nsName')?.value.trim();
+  if(!name)return;
+  const k='c_'+Date.now();
+  md().ostalo.custom[k]={label:name,amount:parseFloat(document.getElementById('nsAmt')?.value)||0};
+  showAddSub=false;saveData();render();
+}
+
+// ============================================================
+// SCREEN: REZIJE
+// ============================================================
+const REZIJE_CATS=[
+  {key:'hep',      label:'HEP Struja',                   icon:'ti-bolt',      bg:'#FFF8ED',tc:'#854F0B'},
+  {key:'termoplin',label:'Termoplin Grijanje',            icon:'ti-flame',     bg:'#FBEAE3',tc:'#8F3A1A'},
+  {key:'magic',    label:'Magic',                         icon:'ti-wifi',      bg:'#EEEDFE',tc:'#534AB7'},
+  {key:'kom',      label:'Kom. naknada — proračun grada', icon:'ti-building',  bg:'#E6F1FB',tc:'#185FA5'},
+  {key:'varkom',   label:'Varkom voda',                   icon:'ti-droplet',   bg:'#E1F5EE',tc:'#0F6E56'},
+  {key:'cistoca',  label:'Čistoća',                       icon:'ti-trash',     bg:'#F1EFE8',tc:'#5F5E5A'},
+];
+
+function renderRezije() {
+  const r=md().rezije, tR=totalRezije();
+  const prev=currentMonth>0?totalRezije(currentMonth-1):null;
+  const custom=Object.entries(r.custom||{}).map(([k,v])=>({key:k,label:v.label,icon:'ti-tag',bg:'#F1EFE8',tc:'#5F5E5A',fixed:false,amount:v.amount||0}));
+
+  let html=`<div class="rezije-banner">
+    <div><span style="font-size:12px;color:#854F0B;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;display:block;margin-bottom:4px">Ukupne režije</span>
+    <span style="font-size:22px;font-weight:500;color:#6B3D08" class="blurable">${tR?fmt(tR):'—'}</span></div>
+    <div style="text-align:right">${prev!=null?`<div style="font-size:11px;color:#854F0B">vs ${MS[currentMonth-1]}:<br><span style="color:${tR<=prev?'#1D9E75':'#D85A30'}">${tR<=prev?'▼':'▲'} ${fmt(Math.abs(tR-prev))}</span></div>`:''}
+    </div>
+  </div><div class="section">`;
+
+  [...REZIJE_CATS.map(c=>({...c,fixed:true})),...custom].forEach(c=>{
+    const amt=c.fixed?(r[c.key]||0):(c.amount||0);
+    const isEditing=editingKey===c.key;
+    html+=makeRow({key:c.key,label:c.label,icon:c.icon,bg:c.bg,tc:c.tc,amt,pct:tR>0&&amt>0?pct(amt,tR):null,type:'rez',editType:'rez',color:'#854F0B',fixed:c.fixed,isEditing});
+  });
+  html+='</div>';
+
+  // History
+  html+=`<div class="section"><div class="section-header"><span class="section-title">Kretanje 2026</span></div>`;
+  for(let m=0;m<=Math.max(currentMonth,4);m++){
+    const t=totalRezije(m),tp=m>0?totalRezije(m-1):null;
+    const diff=tp!=null?t-tp:null;
+    const isCurr=m===currentMonth;
+    html+=`<div class="history-row ${isCurr?'active':''}" onclick="currentMonth=${m};editingKey=null;render()">
+      <span style="${isCurr?'font-weight:500':''}color:var(--text-secondary)">${MS[m]} ${YEAR}</span>
+      <span class="blurable" style="${isCurr?'color:#854F0B;font-weight:500':''}">${t?fmt(t):'—'}</span>
+      <span style="font-size:11px;color:${diff==null?'var(--text-secondary)':diff<=0?'#1D9E75':'#D85A30'}">${diff!=null?(diff<=0?'▼':'▲')+fmt(Math.abs(diff)):''}</span>
+    </div>`;
+  }
+  html+='</div>';
+
+  if(!showAddRezije){
+    html+=`<button class="add-trigger" onclick="showAddRezije=true;render()"><i class="ti ti-plus"></i> Dodaj stavku režija</button>`;
+  } else {
+    html+=`<div class="add-form">
+      <div class="add-form-row"><i class="ti ti-tag" style="color:var(--text-secondary)"></i><input class="text-input" id="nrName" placeholder="Naziv..." maxlength="40"/></div>
+      <div class="add-form-row"><i class="ti ti-currency-euro" style="color:var(--text-secondary)"></i><input class="text-input" id="nrAmt" type="number" min="0" step="0.01" placeholder="Iznos (€)"/>
+      <button class="cancel-btn" onclick="showAddRezije=false;render()">✕</button>
+      <button class="btn-primary" style="flex:0;padding:7px 14px" onclick="addRezijaItem()">Dodaj</button></div>
+    </div>`;
+  }
+  return html;
+}
+
+function addRezijaItem() {
+  const name=document.getElementById('nrName')?.value.trim();
+  if(!name)return;
+  const k='c_'+Date.now();
+  md().rezije.custom[k]={label:name,amount:parseFloat(document.getElementById('nrAmt')?.value)||0};
+  showAddRezije=false;saveData();render();
+}
+
+// ============================================================
+// SCREEN: STEDNJA
+// ============================================================
+const PORT_GROUPS=[
+  {key:'likvidno', label:'Likvidno',             icon:'ti-cash'},
+  {key:'invest',   label:'Investicije',           icon:'ti-chart-candlestick'},
+  {key:'oroceno',  label:'Oročeno & Mirovinska',  icon:'ti-lock'},
+  {key:'ivan',     label:'Ivan',                  icon:'ti-user'},
+];
+
+function renderStednja() {
+  if(detailAccId) return renderPortfolioDetail(detailAccId);
+
+  const total=totalPortfolioVal();
+  const d=md();
+  const tI=totalIncome();
+  const stedStopa=tI>0?pct(d.expenses.stednja,tI):0;
+
+  let html=`<div class="stednja-banner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div style="font-size:11px;color:#185FA5;text-transform:uppercase;letter-spacing:0.5px;font-weight:500;margin-bottom:4px">Ukupni portfelj</div>
+      <div style="font-size:26px;font-weight:500;color:#124D8A" class="blurable">${fmtS(total)} ${loadingPrices?'<span class="loading-dot"></span>':''}</div></div>
+      <button class="refresh-btn" onclick="refreshPrices()"><i class="ti ti-refresh"></i> Osvježi</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Štednja ovaj mj.</div><div class="stat-val blurable">${fmtS(d.expenses.stednja)}</div></div>
+      <div class="stat-card"><div class="stat-label">Stopa štednje</div><div class="stat-val" style="color:#1D9E75">${stedStopa.toFixed(1)}%</div></div>
+      <div class="stat-card"><div class="stat-label">Stanje početno</div><div class="stat-val blurable">${fmtS(d.pocetno)}</div></div>
+      <div class="stat-card"><div class="stat-label">Saldo</div><div class="stat-val blurable" style="color:${saldo()>=0?'#1D9E75':'#D85A30'}">${saldo()<0?'-':''}${fmtS(Math.abs(saldo()))}</div></div>
+    </div>
+  </div>`;
+
+  html+=`<div class="section">`;
+  PORT_GROUPS.forEach(g=>{
+    const accs=portfolio.accounts.filter(a=>a.group===g.key);
+    const gTotal=accs.reduce((s,a)=>s+liveAccVal(a),0);
+    html+=`<div class="group-header">
+      <i class="ti ${g.icon}" style="font-size:13px;color:var(--text-secondary)"></i>
+      <span class="group-label">${g.label}</span>
+      <span class="group-total blurable">${gTotal>0?fmtS(gTotal):'—'}</span>
+    </div>`;
+    accs.forEach(acc=>{
+      const val=liveAccVal(acc);
+      const histPrev=acc.history[Math.max(0,currentMonth-1)]||0;
+      const delta=histPrev>0?((val-histPrev)/histPrev*100):null;
+      html+=`<div class="acc-row" onclick="detailAccId='${acc.id}';render()">
+        <div class="row-icon" style="background:${acc.bg};color:${acc.tc}"><i class="ti ${acc.icon}"></i></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500">${acc.label}</div>
+          <div style="font-size:11px;color:var(--text-secondary)">${acc.holdings?.length>0?acc.holdings.length+' pozicija':'Stanje računa'}</div>
+        </div>
+        <div style="margin-right:8px">${sparkline(acc.history.slice(0,currentMonth+1),acc.tc)}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:500;color:${val?'#185FA5':'var(--text-secondary)'}" class="blurable">${val?fmtS(val):'—'}</div>
+          ${delta!=null?`<div style="font-size:11px;color:${delta>=0?'#1D9E75':'#D85A30'}">${delta>=0?'▲':'▼'}${Math.abs(delta).toFixed(1)}%</div>`:''}
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:14px;color:var(--text-secondary);opacity:0.5;margin-left:4px"></i>
+      </div>`;
+    });
+  });
+  html+='</div>';
+  return html;
+}
+
+function renderPortfolioDetail(accId) {
+  const acc=portfolio.accounts.find(a=>a.id===accId);
+  if(!acc)return'';
+  const val=liveAccVal(acc);
+  const h=acc.history;
+  const ytdChange=h[0]>0?((val-h[0])/h[0]*100):null;
+  const hasH=acc.holdings&&acc.holdings.length>0;
+
+  let html=`<div class="detail-hero">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="row-icon" style="background:${acc.bg};color:${acc.tc};width:44px;height:44px;border-radius:13px;font-size:20px"><i class="ti ${acc.icon}"></i></div>
+      <div><div style="font-size:18px;font-weight:500">${acc.label}</div>
+      <div style="font-size:12px;color:var(--text-secondary)">${acc.type==='stocks'?'Dionice & ETF':acc.type==='crypto'?'Kriptovalute':'Gotovinski račun'}</div></div>
+    </div>
+    <div style="font-size:30px;font-weight:500;color:#124D8A;margin-bottom:4px" class="blurable">${val>0?fmtS(val):'—'} ${loadingPrices?'<span class="loading-dot"></span>':''}</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Početno (Sij)</div><div class="stat-val blurable">${fmtS(h[0])}</div></div>
+      <div class="stat-card"><div class="stat-label">Zadnje stanje</div><div class="stat-val blurable">${fmtS(h[currentMonth]||0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Rast YTD</div><div class="stat-val" style="color:${ytdChange!=null?(ytdChange>=0?'#1D9E75':'#D85A30'):'var(--text-secondary)'}">${ytdChange!=null?ytdChange.toFixed(1)+'%':'—'}</div></div>
+      <div class="stat-card"><div class="stat-label">Promjena €</div><div class="stat-val blurable">${h[0]>0?fmtSigned(val-h[0]):'—'}</div></div>
+    </div>
+  </div>`;
+
+  html+=`<div class="chart-section">
+    <div class="section-header"><span class="section-title">Kumulativ po mjesecima</span></div>
+    <div style="padding:12px 16px 8px">${barChart(h.slice(0,Math.max(currentMonth+1,5)),acc.tc)}</div>
+  </div>`;
+
+  // Month history
+  html+=`<div class="section"><div class="group-header"><span class="group-label">Stanje po mjesecima</span></div>`;
+  h.slice(0,Math.max(currentMonth+1,5)).forEach((v,i)=>{
+    const prev=i>0?h[i-1]:null;
+    const diff=prev!=null&&prev>0?((v-prev)/prev*100):null;
+    html+=`<div class="history-row">
+      <span style="color:var(--text-secondary)">${MS[i]} ${YEAR}</span>
+      <span class="blurable" style="font-weight:500">${fmtS(v)}</span>
+      <span style="font-size:11px;color:${diff==null?'var(--text-secondary)':diff>=0?'#1D9E75':'#D85A30'}">${diff!=null?(diff>=0?'+':'')+diff.toFixed(1)+'%':''}</span>
+    </div>`;
+  });
+  html+='</div>';
+
+  // Holdings
+  if(hasH){
+    html+=`<div class="section">
+      <div class="group-header"><span class="group-label">${acc.type==='stocks'?'Dionice / ETF':'Kriptovalute'}</span>
+      <button class="refresh-btn" style="margin-left:auto" onclick="refreshPrices()"><i class="ti ti-refresh"></i></button></div>`;
+    acc.holdings.forEach(h2=>{
+      const v=h2.price!=null?h2.price*h2.qty:null;
+      html+=`<div class="holding-row">
+        <div class="holding-icon" style="background:${acc.bg};color:${acc.tc}">${acc.type==='stocks'?h2.ticker.substring(0,3):h2.label}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${h2.name}</div>
+          <div style="font-size:11px;color:var(--text-secondary)">${acc.type==='stocks'?h2.qty+' kom · '+(h2.price?fmt(h2.price):'—'):h2.qty+' '+h2.label+' · '+(h2.price?fmt(h2.price):'—')}/kom${h2.isin?' · '+h2.isin:''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:500;color:#185FA5" class="blurable">${v!=null?fmt(v):(loadingPrices?'<span class="loading-dot"></span>':'—')}</div>
+          ${h2.change!=null?`<div style="font-size:11px;color:${h2.change>=0?'#1D9E75':'#D85A30'}">${h2.change>=0?'+':''}${h2.change.toFixed(2)}%</div>`:''}
+        </div>
+        <button class="del-btn" onclick="deleteHolding('${acc.id}','${h2.id}')"><i class="ti ti-x"></i></button>
+      </div>`;
+    });
+
+    if(!showAddHolding){
+      html+=`</div><button class="add-trigger" onclick="showAddHolding=true;render()"><i class="ti ti-plus"></i> Dodaj ${acc.type==='stocks'?'dionicu / ETF':'kriptovalutu'}</button>`;
+    } else {
+      html+=`</div><div class="add-form">`;
+      if(acc.type==='stocks'){
+        html+=`<div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">Ticker</span><input class="text-input" id="ht" placeholder="AAPL, VOO..." style="text-transform:uppercase"/></div>
+               <div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">ISIN</span><input class="text-input" id="hi" placeholder="US0378331005 (opciono)"/></div>
+               <div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">Naziv</span><input class="text-input" id="hn" placeholder="Apple Inc."/></div>
+               <div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">Kom.</span><input class="text-input" id="hq" type="number" min="0" step="0.0001" placeholder="10"/></div>`;
+      } else {
+        html+=`<div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">CoinGecko</span><input class="text-input" id="hs" placeholder="bitcoin, ethereum..."/></div>
+               <div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">Oznaka</span><input class="text-input" id="hl" placeholder="BTC, ETH..." style="text-transform:uppercase"/></div>
+               <div class="add-form-row"><span style="font-size:12px;color:var(--text-secondary);width:56px;flex-shrink:0">Količina</span><input class="text-input" id="hq" type="number" min="0" step="0.00000001" placeholder="0.05"/></div>`;
+      }
+      html+=`<div class="form-actions"><button class="btn-secondary" onclick="showAddHolding=false;render()">Odustani</button>
+             <button class="btn-primary" onclick="addHolding('${acc.id}','${acc.type}')">Dodaj i dohvati</button></div></div>`;
+    }
+  }
+
+  return html;
+}
+
+async function addHolding(accId,type) {
+  const acc=portfolio.accounts.find(a=>a.id===accId);
+  if(!acc)return;
+  const qty=parseFloat(document.getElementById('hq')?.value)||0;
+  const id='h'+Date.now();
+  if(type==='stocks'){
+    const ticker=document.getElementById('ht')?.value.trim().toUpperCase();
+    if(!ticker)return;
+    acc.holdings.push({id,ticker,isin:document.getElementById('hi')?.value.trim(),name:document.getElementById('hn')?.value.trim()||ticker,qty,price:null,change:null});
+    showAddHolding=false;savePortfolio();render();
+    const res=await fetchStock(ticker);
+    const h=acc.holdings.find(h=>h.id===id);
+    if(h){h.price=res.price;h.change=res.change;}savePortfolio();render();
+  } else {
+    const symbol=document.getElementById('hs')?.value.trim().toLowerCase();
+    const label=document.getElementById('hl')?.value.trim().toUpperCase()||symbol?.toUpperCase();
+    if(!symbol)return;
+    acc.holdings.push({id,symbol,label,name:label,qty,price:null,change:null});
+    showAddHolding=false;savePortfolio();render();
+    const d=await fetchCrypto([symbol]);
+    const h=acc.holdings.find(h=>h.id===id);
+    if(h&&d[symbol]){h.price=d[symbol].eur;h.change=d[symbol].eur_24h_change;}savePortfolio();render();
+  }
+}
+
+function deleteHolding(accId,hId) {
+  const acc=portfolio.accounts.find(a=>a.id===accId);
+  if(acc)acc.holdings=acc.holdings.filter(h=>h.id!==hId);
+  savePortfolio();render();
+}
+
+// ============================================================
+// NAVIGATION & HEADER
+// ============================================================
+function goTo(screen) {
+  currentScreen=screen;
+  detailAccId=null;editingKey=null;editingSubKey=null;
+  showAddMain=showAddSub=showAddIncome=showAddRezije=showAddHolding=false;
+  ostaloOpen=false;breakdownOpen=false;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+screen)?.classList.add('active');
+  render();
+}
+
+function renderHeader() {
+  const isDetail=currentScreen==='stednja'&&detailAccId;
+  const acc=isDetail?portfolio.accounts.find(a=>a.id===detailAccId):null;
+  document.getElementById('appHeader').innerHTML=`
+    <div class="header-left">
+      ${isDetail?`<button class="back-btn" onclick="detailAccId=null;showAddHolding=false;render()"><i class="ti ti-arrow-left"></i> Natrag</button>`:''}
+      <div class="month-nav">
+        ${!isDetail?`<button class="month-btn" onclick="prevMonth()" id="btnPrev" ${currentMonth===0?'disabled':''}><i class="ti ti-chevron-left"></i></button>
+        <span class="month-title">${isDetail?'':(MONTHS[currentMonth]+' '+YEAR)}</span>
+        <button class="month-btn" onclick="nextMonth()" id="btnNext" ${currentMonth===11?'disabled':''}><i class="ti ti-chevron-right"></i></button>`
+        :`<span class="header-title">${acc?.label||''}</span>`}
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn ${hiddenMode?'active':''}" onclick="toggleHide()" title="Sakrij iznose">
+        <i class="ti ${hiddenMode?'ti-eye-off':'ti-eye'}"></i>
+      </button>
+      <button class="icon-btn" onclick="lockApp()" title="Zaključaj"><i class="ti ti-lock"></i></button>
+    </div>`;
+}
+
+function prevMonth() { if(currentMonth>0){currentMonth--;editingKey=null;editingSubKey=null;render();} }
+function nextMonth() { if(currentMonth<11){currentMonth++;editingKey=null;editingSubKey=null;render();} }
+
+function toggleHide() {
+  hiddenMode=!hiddenMode;
+  document.body.classList.toggle('hidden-mode',hiddenMode);
+  renderHeader(); // just update eye icon
+}
+
+// ============================================================
+// MAIN RENDER
+// ============================================================
+function render() {
+  renderHeader();
+  const c=document.getElementById('appContent');
+  if(currentScreen==='pregled')     c.innerHTML=renderPregled();
+  else if(currentScreen==='prihodi') c.innerHTML=renderPrihodi();
+  else if(currentScreen==='rashodi') c.innerHTML=renderRashodi();
+  else if(currentScreen==='rezije')  c.innerHTML=renderRezije();
+  else if(currentScreen==='stednja') c.innerHTML=renderStednja();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  initData();
+  initPortfolio();
+  buildNumpad();
+  currentMonth=new Date().getMonth();
+  // Auto try biometric on load
+  setTimeout(()=>tryBiometric(),400);
+  resetLockTimer();
+  // Service worker registration
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/Financije-NB/sw.js').catch(()=>{});
+  }
+});
+</script>
+</body>
+</html>
