@@ -309,7 +309,8 @@ let showAddSub    = false;
 let showAddIncome = false;
 let showAddRezije = false;
 let showAddHolding= false;
-let loadingPrices = false;
+let detailOstaloKey = null;  // which subcat is open for entries
+let editingEntryId  = null;  // entry id being edited
 let eurUsdRate    = 1.08;
 let pinSetupMode  = false;
 let pinSetupStep  = 0;
@@ -323,19 +324,42 @@ function defaultMonthData() {
   return {
     income:   { placa:0, najamnina:0, bonus:0, regres:0, bozicnica:0, poklon:0, ostalo:0, custom:{} },
     expenses: { domacinstvo:0, stednja:0, mastercard:0, prijevoz:0, mobitel:0, custom:{} },
-    ostalo:   { sport:0, hrana:0, izlazak:0, odjeca:0, zdravlje:0, auto:0, poklon:0, ivan:0, youtube:0, ostalo:0, custom:{} },
+    // ostalo: svaka podkategorija je lista upisa [{id, naziv, iznos}]
+    ostalo:   { sport:[], hrana:[], izlazak:[], odjeca:[], zdravlje:[], auto:[], poklon:[], ivan:[], youtube:[], ostalo:[], custom:{} },
     rezije:   { hep:0, termoplin:0, magic:0, kom:0, varkom:0, cistoca:0, custom:{} },
     pocetno:  0,
   };
 }
 
+// Migrate old ostalo format (number) to new (array)
+function migrateOstalo(o) {
+  const keys=['sport','hrana','izlazak','odjeca','zdravlje','auto','poklon','ivan','youtube','ostalo'];
+  keys.forEach(k=>{
+    if(typeof o[k]==='number') {
+      o[k] = o[k]>0 ? [{id:'m_'+k,naziv:k.charAt(0).toUpperCase()+k.slice(1),iznos:o[k]}] : [];
+    } else if(!Array.isArray(o[k])) {
+      o[k]=[];
+    }
+  });
+  // migrate custom
+  if(o.custom) Object.entries(o.custom).forEach(([k,v])=>{
+    if(typeof v==='object'&&!Array.isArray(v)&&v.amount!==undefined) {
+      o.custom[k]={label:v.label,entries:v.amount>0?[{id:'m_'+k,naziv:v.label,iznos:v.amount}]:[]};
+    }
+  });
+}
+
 // Pre-fill first 5 months with demo data
+function demoOstalo(sport,hrana,izlazak,odjeca,zdravlje,auto_,poklon,ivan,youtube,ostalo) {
+  const mk=(v,k)=>v>0?[{id:'d_'+k,naziv:k.charAt(0).toUpperCase()+k.slice(1),iznos:v}]:[];
+  return {sport:mk(sport,'sport'),hrana:mk(hrana,'hrana'),izlazak:mk(izlazak,'izlazak'),odjeca:mk(odjeca,'odjeca'),zdravlje:mk(zdravlje,'zdravlje'),auto:mk(auto_,'auto'),poklon:mk(poklon,'poklon'),ivan:mk(ivan,'ivan'),youtube:mk(youtube,'youtube'),ostalo:mk(ostalo,'ostalo'),custom:{}};
+}
 const DEMO = [
-  { income:{ placa:2203.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:365,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:104.68,hrana:10,izlazak:20,odjeca:0,zdravlje:45,auto:0,poklon:0,ivan:117,youtube:0,ostalo:20,custom:{} }, rezije:{ hep:43.67,termoplin:39.52,magic:17.93,kom:16.53,varkom:18.92,cistoca:13.15,custom:{} }, pocetno:365 },
-  { income:{ placa:2155.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:10,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:80,odjeca:0,zdravlje:25,auto:0,poklon:88,ivan:50,youtube:0,ostalo:147,custom:{} }, rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:135 },
-  { income:{ placa:2203,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:732,custom:{} }, expenses:{ domacinstvo:550,stednja:1455,mastercard:120,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:42,odjeca:0,zdravlje:13,auto:0,poklon:58,ivan:75,youtube:0,ostalo:250,custom:{} }, rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:70 },
-  { income:{ placa:2181,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:500,stednja:1455,mastercard:200,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:55,odjeca:0,zdravlje:25,auto:75,poklon:80,ivan:118,youtube:0,ostalo:70,custom:{} }, rezije:{ hep:0,termoplin:0,magic:0,kom:0,varkom:0,cistoca:0,custom:{} }, pocetno:270 },
-  { income:{ placa:2203,najamnina:0,bonus:1800,regres:0,bozicnica:0,poklon:0,ostalo:1434,custom:{} }, expenses:{ domacinstvo:550,stednja:4055,mastercard:250,prijevoz:0,mobitel:20,custom:{} }, ostalo:{ sport:84.68,hrana:0,izlazak:58.2,odjeca:20,zdravlje:0,auto:0,poklon:55,ivan:45,youtube:0,ostalo:290.9,custom:{} }, rezije:{ hep:36.91,termoplin:51,magic:17.93,kom:16.53,varkom:18.92,cistoca:17.24,custom:{} }, pocetno:115 },
+  { income:{ placa:2203.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:365,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:0,mobitel:20,custom:{} }, ostalo:demoOstalo(104.68,10,20,0,45,0,0,117,0,20), rezije:{ hep:43.67,termoplin:39.52,magic:17.93,kom:16.53,varkom:18.92,cistoca:13.15,custom:{} }, pocetno:365 },
+  { income:{ placa:2155.95,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:600,stednja:1455,mastercard:400,prijevoz:10,mobitel:20,custom:{} }, ostalo:demoOstalo(84.68,0,80,0,25,0,88,50,0,147), rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:135 },
+  { income:{ placa:2203,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:732,custom:{} }, expenses:{ domacinstvo:550,stednja:1455,mastercard:120,prijevoz:0,mobitel:20,custom:{} }, ostalo:demoOstalo(84.68,0,42,0,13,0,58,75,0,250), rezije:{ hep:33.53,termoplin:5,magic:17.93,kom:16.53,varkom:17.06,cistoca:13.15,custom:{} }, pocetno:70 },
+  { income:{ placa:2181,najamnina:0,bonus:0,regres:0,bozicnica:0,poklon:0,ostalo:400,custom:{} }, expenses:{ domacinstvo:500,stednja:1455,mastercard:200,prijevoz:0,mobitel:20,custom:{} }, ostalo:demoOstalo(84.68,0,55,0,25,75,80,118,0,70), rezije:{ hep:0,termoplin:0,magic:0,kom:0,varkom:0,cistoca:0,custom:{} }, pocetno:270 },
+  { income:{ placa:2203,najamnina:0,bonus:1800,regres:0,bozicnica:0,poklon:0,ostalo:1434,custom:{} }, expenses:{ domacinstvo:550,stednja:4055,mastercard:250,prijevoz:0,mobitel:20,custom:{} }, ostalo:demoOstalo(84.68,0,58.2,20,0,0,55,45,0,290.9), rezije:{ hep:36.91,termoplin:51,magic:17.93,kom:16.53,varkom:18.92,cistoca:17.24,custom:{} }, pocetno:115 },
 ];
 
 let appData = {};
@@ -346,6 +370,9 @@ function initData() {
     if (!appData[m]) {
       appData[m] = m < DEMO.length ? JSON.parse(JSON.stringify(DEMO[m])) : defaultMonthData();
     }
+    // migrate old format
+    if(appData[m].ostalo) migrateOstalo(appData[m].ostalo);
+    else appData[m].ostalo = defaultMonthData().ostalo;
   }
 }
 function saveData() {
@@ -568,9 +595,22 @@ function totalExpenses(m=currentMonth) {
 }
 function totalOstalo(m=currentMonth) {
   const o=md(m).ostalo;
-  let t=['sport','hrana','izlazak','odjeca','zdravlje','auto','poklon','ivan','youtube','ostalo'].reduce((s,k)=>s+(o[k]||0),0);
-  Object.values(o.custom||{}).forEach(v=>t+=(v.amount||0));
+  const keys=['sport','hrana','izlazak','odjeca','zdravlje','auto','poklon','ivan','youtube','ostalo'];
+  let t=keys.reduce((s,k)=>{
+    const v=o[k];
+    if(Array.isArray(v)) return s+v.reduce((a,e)=>a+(e.iznos||0),0);
+    return s+(typeof v==='number'?v:0);
+  },0);
+  Object.values(o.custom||{}).forEach(v=>{
+    if(v.entries) t+=v.entries.reduce((a,e)=>a+(e.iznos||0),0);
+    else if(typeof v.amount==='number') t+=v.amount;
+  });
   return t;
+}
+function subCatTotal(key, m=currentMonth) {
+  const v=md(m).ostalo[key];
+  if(Array.isArray(v)) return v.reduce((a,e)=>a+(e.iznos||0),0);
+  return typeof v==='number'?v:0;
 }
 function totalRezije(m=currentMonth) {
   const r=md(m).rezije;
@@ -854,12 +894,40 @@ function renderPregled() {
     }).join('')}
   </div>`;
 
+  // POČETNO STANJE — editable card
+  html+=`<div class="section" style="margin-bottom:0">
+    <div class="row">
+      <div class="row-left">
+        <div class="row-icon" style="background:#F1EFE8;color:#5F5E5A"><i class="ti ti-wallet"></i></div>
+        <div>
+          <div class="row-name">Početno stanje</div>
+          <div class="row-sub">Gotovina na početku mjeseca</div>
+        </div>
+      </div>
+      <div class="row-right">
+        <span class="blurable" style="font-size:14px;font-weight:500">${d.pocetno?fmtS(d.pocetno):'—'}</span>
+        <button class="edit-btn" onclick="toggleEdit('pocetno_stanje','poc')">Uredi</button>
+      </div>
+    </div>
+    ${editingKey==='pocetno_stanje'?`<div class="edit-row">
+      <input class="amount-input" id="ei-pocetno_stanje" type="number" min="0" step="0.01"
+        value="${d.pocetno||''}" placeholder="0.00"
+        onkeydown="if(event.key==='Enter')savePocetno()" style="border-color:#5F5E5A"/>
+      <span style="font-size:12px;color:var(--text-secondary)">€</span>
+      <button class="cancel-btn" onclick="editingKey=null;render()">✕</button>
+      <button class="save-btn" onclick="savePocetno()" style="background:#5F5E5A">Spremi</button>
+    </div>`:''}
+  </div>`;
+
   return html;
 }
 
-// ============================================================
-// SCREEN: PRIHODI
-// ============================================================
+function savePocetno() {
+  const val=parseFloat(document.getElementById('ei-pocetno_stanje')?.value)||0;
+  md().pocetno=val;
+  editingKey=null;saveData();render();
+}
+
 const INCOME_CATS=[
   {key:'placa',    label:'Plaća',     icon:'ti-briefcase',  bg:'#E1F5EE',tc:'#0F6E56'},
   {key:'najamnina',label:'Najamnina', icon:'ti-home-dollar',bg:'#E6F1FB',tc:'#185FA5'},
@@ -955,7 +1023,7 @@ function renderRashodi() {
 
   // OSTALO expandable
   const oPct=tE>0?pct(tO,tE):0;
-  const activeSubs=OSTALO_CATS.filter(c=>(md().ostalo[c.key]||0)>0).length;
+  const activeSubs=OSTALO_CATS.filter(c=>{const v=md().ostalo[c.key];return Array.isArray(v)?v.length>0:(v>0);}).length;
   html+=`<div class="ostalo-header ${ostaloOpen?'open':''}" onclick="ostaloOpen=!ostaloOpen;render()">
     <div class="row-left">
       <div class="row-icon" style="background:#FBEAF0;color:#993556"><i class="ti ti-dots-circle"></i></div>
@@ -984,6 +1052,14 @@ function renderRashodi() {
   return html;
 }
 
+function addSubCat() {
+  const name=document.getElementById('nsName')?.value.trim();
+  if(!name)return;
+  const k='c_'+Date.now();
+  md().ostalo.custom[k]={label:name,entries:[]};
+  showAddSub=false;saveData();render();
+}
+
 function addMainCat() {
   const name=document.getElementById('nmName')?.value.trim();
   if(!name)return;
@@ -994,34 +1070,94 @@ function addMainCat() {
 
 function renderOstaloSub(tE) {
   const o=md().ostalo, tO=totalOstalo();
-  const customSub=Object.entries(o.custom||{}).map(([k,v])=>({key:k,label:v.label,icon:'ti-tag',bg:'#F1EFE8',tc:'#5F5E5A',fixed:false,amount:v.amount||0}));
+  const customSub=Object.entries(o.custom||{}).map(([k,v])=>({
+    key:k, label:v.label, icon:'ti-tag', bg:'#F1EFE8', tc:'#5F5E5A', fixed:false,
+    entries: Array.isArray(v.entries)?v.entries:[]
+  }));
+
   let html='<div class="sub-section">';
+
   [...OSTALO_CATS,...customSub].forEach(c=>{
-    const amt=c.fixed?(o[c.key]||0):(c.amount||0);
-    const isEditing=editingSubKey===c.key;
-    const p=tO>0&&amt>0?pct(amt,tO):null;
-    html+=`<div class="sub-row" style="${isEditing?'border-bottom:none':''}">
+    const entries=c.fixed?(Array.isArray(o[c.key])?o[c.key]:[]):(c.entries||[]);
+    const amt=entries.reduce((a,e)=>a+(e.iznos||0),0);
+    const isOpen=detailOstaloKey===c.key;
+    const p=tO>0&&amt>0?(amt/tO*100):null;
+
+    // main sub row — klik otvara listu upisa
+    html+=`<div class="sub-row" onclick="detailOstaloKey=detailOstaloKey==='${c.key}'?null:'${c.key}';editingEntryId=null;render()"
+      style="cursor:pointer;${isOpen?'background:var(--bg-primary);border-bottom:none':''}">
       <div class="row-left">
         <div class="row-icon sm" style="background:${c.bg};color:${c.tc}"><i class="ti ${c.icon}"></i></div>
-        <div><div style="font-size:13px;font-weight:400">${c.label}</div>
-        <div class="row-sub">${p?p.toFixed(1)+'% od Ostalog':'—'}</div></div>
+        <div>
+          <div style="font-size:13px;font-weight:500">${c.label}</div>
+          <div class="row-sub">${entries.length>0?entries.length+' upis'+(entries.length>1?'a':''):p?p.toFixed(1)+'% od Ostalog':'—'}</div>
+        </div>
       </div>
       <div class="row-right">
         <span class="row-amount blurable ${!amt?'zero':''}" style="${amt?'color:#D85A30;font-size:13px':''}">${amt?fmt(amt):'—'}</span>
-        <button class="edit-btn" onclick="toggleSubEdit('${c.key}')">${isEditing?'Zatvori':'Uredi'}</button>
-        ${!c.fixed?`<button class="del-btn" onclick="deleteCat('${c.key}','sub')"><i class="ti ti-x"></i></button>`:''}
+        ${!c.fixed?`<button class="del-btn" onclick="event.stopPropagation();deleteCat('${c.key}','sub')"><i class="ti ti-x"></i></button>`:''}
+        <i class="ti ti-chevron-${isOpen?'up':'down'}" style="font-size:13px;color:var(--text-secondary);opacity:0.6"></i>
       </div>
-    </div>
-    ${isEditing?subEditRowHtml(c.key,amt):''}
-    ${amt>0&&!isEditing&&p?`<div class="prog-wrap" style="padding-left:22px"><div class="prog-bar"><div class="prog-fill" style="width:${p}%;background:${c.tc}"></div></div></div>`:''}`;
+    </div>`;
+
+    // expanded: lista upisa
+    if(isOpen) {
+      html+=`<div style="background:var(--bg-primary);border-bottom:0.5px solid var(--border-light)">`;
+
+      if(entries.length===0) {
+        html+=`<div style="padding:10px 16px 10px 48px;font-size:12px;color:var(--text-secondary)">Nema upisa za ovaj mjesec</div>`;
+      } else {
+        entries.forEach(e=>{
+          const isEditingE=editingEntryId===e.id;
+          html+=`<div style="display:flex;align-items:center;padding:8px 16px 8px 48px;border-bottom:0.5px solid var(--border-light);${isEditingE?'background:var(--bg-secondary)':''}">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px">${e.naziv}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              ${isEditingE
+                ? `<input id="ei_iznos_${e.id}" type="number" min="0" step="0.01" value="${e.iznos}" style="width:80px;font-size:13px;padding:4px 8px;border:0.5px solid #D85A30;border-radius:6px;background:var(--bg-primary);color:var(--text-primary);outline:none" onkeydown="if(event.key==='Enter')saveEntry('${c.key}','${e.id}','${c.fixed?'base':'custom'}')"/>
+                  <button onclick="saveEntry('${c.key}','${e.id}','${c.fixed?'base':'custom'}')" style="background:#D85A30;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">OK</button>
+                  <button onclick="editingEntryId=null;render()" style="background:none;border:0.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;color:var(--text-secondary)">✕</button>`
+                : `<span class="blurable" style="font-size:13px;font-weight:500;color:#D85A30">${fmt(e.iznos)}</span>
+                   <button onclick="editingEntryId='${e.id}';render()" class="edit-btn" style="padding:4px 8px;font-size:11px">Uredi</button>`
+              }
+              <button onclick="deleteEntry('${c.key}','${e.id}','${c.fixed?'base':'custom'}')" class="del-btn"><i class="ti ti-x"></i></button>
+            </div>
+          </div>`;
+        });
+      }
+
+      // add new entry form
+      html+=`<div style="padding:8px 16px 8px 48px;display:flex;gap:6px;align-items:center;border-top:0.5px dashed var(--border)">
+        <input id="newE_naziv_${c.key}" type="text" placeholder="Naziv..." maxlength="40"
+          style="flex:1;font-size:12px;padding:6px 10px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);outline:none"/>
+        <input id="newE_iznos_${c.key}" type="number" min="0" step="0.01" placeholder="€"
+          style="width:72px;font-size:12px;padding:6px 8px;border:0.5px solid var(--border);border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);outline:none;text-align:right"
+          onkeydown="if(event.key==='Enter')addEntry('${c.key}','${c.fixed?'base':'custom'}')"/>
+        <button onclick="addEntry('${c.key}','${c.fixed?'base':'custom'}')"
+          style="background:#D85A30;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap">+ Dodaj</button>
+      </div>`;
+
+      if(amt>0&&p) {
+        html+=`<div style="padding:0 16px 8px 48px"><div class="prog-bar"><div class="prog-fill" style="width:${p}%;background:${c.tc}"></div></div></div>`;
+      }
+      html+=`</div>`;
+    } else if(amt>0&&p) {
+      html+=`<div class="prog-wrap" style="padding-left:22px"><div class="prog-bar"><div class="prog-fill" style="width:${p}%;background:${c.tc}"></div></div></div>`;
+    }
   });
+
   html+=`<div class="sub-total-row"><span>Ukupno Ostalo</span><span class="blurable">${fmt(tO)}</span></div>`;
+
+  // add custom subcat
   if(!showAddSub){
-    html+=`<div class="sub-add-row" style="cursor:pointer" onclick="showAddSub=true;render()"><i class="ti ti-plus" style="color:var(--text-secondary)"></i><span style="font-size:13px;color:var(--text-secondary)">Dodaj podkategoriju</span></div>`;
+    html+=`<div class="sub-add-row" style="cursor:pointer" onclick="showAddSub=true;render()">
+      <i class="ti ti-plus" style="color:var(--text-secondary)"></i>
+      <span style="font-size:13px;color:var(--text-secondary)">Dodaj podkategoriju</span>
+    </div>`;
   } else {
     html+=`<div class="sub-add-row">
-      <input class="text-input" id="nsName" placeholder="Naziv..." maxlength="30" style="font-size:12px;padding:5px 8px"/>
-      <input class="text-input" id="nsAmt" type="number" min="0" step="0.01" placeholder="€" style="width:70px;flex:none;font-size:12px;padding:5px 8px"/>
+      <input class="text-input" id="nsName" placeholder="Naziv kategorije..." maxlength="30" style="font-size:12px;padding:5px 8px"/>
       <button class="cancel-btn" onclick="showAddSub=false;render()" style="padding:5px 8px">✕</button>
       <button class="save-btn" onclick="addSubCat()" style="background:#D85A30;padding:5px 10px;font-size:12px">Dodaj</button>
     </div>`;
@@ -1030,12 +1166,36 @@ function renderOstaloSub(tE) {
   return html;
 }
 
-function addSubCat() {
-  const name=document.getElementById('nsName')?.value.trim();
-  if(!name)return;
-  const k='c_'+Date.now();
-  md().ostalo.custom[k]={label:name,amount:parseFloat(document.getElementById('nsAmt')?.value)||0};
-  showAddSub=false;saveData();render();
+function addEntry(catKey, catType) {
+  const naziv=(document.getElementById('newE_naziv_'+catKey)?.value||'').trim();
+  const iznos=parseFloat(document.getElementById('newE_iznos_'+catKey)?.value)||0;
+  if(!naziv&&!iznos) return;
+  const entry={id:'e_'+Date.now(),naziv:naziv||'Upit',iznos};
+  const o=md().ostalo;
+  if(catType==='base') {
+    if(!Array.isArray(o[catKey])) o[catKey]=[];
+    o[catKey].push(entry);
+  } else {
+    if(!o.custom[catKey].entries) o.custom[catKey].entries=[];
+    o.custom[catKey].entries.push(entry);
+  }
+  saveData(); render();
+}
+
+function saveEntry(catKey, entryId, catType) {
+  const iznos=parseFloat(document.getElementById('ei_iznos_'+entryId)?.value)||0;
+  const o=md().ostalo;
+  const entries=catType==='base'?o[catKey]:o.custom[catKey].entries;
+  const e=entries.find(e=>e.id===entryId);
+  if(e) e.iznos=iznos;
+  editingEntryId=null; saveData(); render();
+}
+
+function deleteEntry(catKey, entryId, catType) {
+  const o=md().ostalo;
+  if(catType==='base') o[catKey]=o[catKey].filter(e=>e.id!==entryId);
+  else o.custom[catKey].entries=o.custom[catKey].entries.filter(e=>e.id!==entryId);
+  saveData(); render();
 }
 
 // ============================================================
