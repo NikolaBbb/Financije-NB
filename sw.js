@@ -1,4 +1,4 @@
-const CACHE = 'financije-v1';
+const CACHE = 'financije-v4';
 const ASSETS = [
   '/Financije-NB/',
   '/Financije-NB/index.html',
