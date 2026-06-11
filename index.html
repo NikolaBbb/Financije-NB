@@ -187,7 +187,9 @@ body.blur .B{filter:blur(8px);user-select:none;}
     <div class="ni" id="ni-prihodi" onclick="go('prihodi')"><i class="ti ti-arrow-down-circle ni-ico"></i><span class="ni-lbl">Prihodi</span></div>
     <div class="ni" id="ni-rashodi" onclick="go('rashodi')"><i class="ti ti-arrow-up-circle ni-ico"></i><span class="ni-lbl">Rashodi</span></div>
     <div class="ni" id="ni-rezije" onclick="go('rezije')"><i class="ti ti-bolt ni-ico"></i><span class="ni-lbl">Režije</span></div>
+    <!-- STEDNJA SKRIVENA - podaci sacuvani, vratiti kad bude spremo
     <div class="ni" id="ni-stednja" onclick="go('stednja')"><i class="ti ti-piggy-bank ni-ico"></i><span class="ni-lbl">Štednja</span></div>
+    -->
   </nav>
 </div>
 
@@ -1182,7 +1184,7 @@ document.addEventListener('touchstart',resetLock);document.addEventListener('cli
 
 // ── HEADER & NAV ──────────────────────────────────────────
 function renderHdr(){
-  const isDetail=scr==='stednja'&&detailAcc;
+  const isDetail=false;
   const a=isDetail?PORT.accounts.find(x=>x.id===detailAcc):null;
   document.getElementById('hdr').innerHTML=`
     ${isDetail?`<button class="back-btn" onclick="detailAcc=null;addingHolding=false;render()"><i class="ti ti-arrow-left"></i> Natrag</button><span style="font-size:15px;font-weight:500;flex:1;text-align:center">${a?.lbl||''}</span>`:
