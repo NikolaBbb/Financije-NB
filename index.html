@@ -1032,13 +1032,18 @@ async function refreshPrices(){
       allC.forEach(h=>{if(d[h.sym]){h.price=d[h.sym].eur;h.chg=d[h.sym].eur_24h_change;}});
     }catch(e){}
   }
+  // EUR suffixes — already in EUR, no conversion needed
+  const EUR_SUFFIXES=['.MI','.AS','.PA','.BR','.DE','.F','.MC','.SW','.VI','.CO','.HE','.OL','.ST'];
+  function isEurTicker(ticker){ return EUR_SUFFIXES.some(s=>ticker.toUpperCase().endsWith(s)); }
   await Promise.all(allS.map(async h=>{
     try{
       const url=`https://query1.finance.yahoo.com/v8/finance/chart/${h.ticker}?interval=1d&range=2d`;
       const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
       const o=await r.json();const d=JSON.parse(o.contents);
       const m=d.chart.result[0].meta;
-      h.price=m.regularMarketPrice*eurUsd;
+      // If ticker is already EUR-denominated, don't convert
+      const conv=isEurTicker(h.ticker)?1:eurUsd;
+      h.price=m.regularMarketPrice*conv;
       h.chg=m.chartPreviousClose?((m.regularMarketPrice-m.chartPreviousClose)/m.chartPreviousClose*100):null;
     }catch(e){}
   }));
@@ -1058,7 +1063,7 @@ async function addHolding(accId,type){
       const r=await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
       const o=await r.json();const d=JSON.parse(o.contents);const m=d.chart.result[0].meta;
       const h=a.holdings.find(h=>h.id===id);
-      if(h){h.price=m.regularMarketPrice*eurUsd;h.chg=m.chartPreviousClose?((m.regularMarketPrice-m.chartPreviousClose)/m.chartPreviousClose*100):null;}
+      if(h){const conv=isEurTicker(ticker)?1:eurUsd;h.price=m.regularMarketPrice*conv;h.chg=m.chartPreviousClose?((m.regularMarketPrice-m.chartPreviousClose)/m.chartPreviousClose*100):null;}
     }catch(e){}
   } else {
     const sym=document.getElementById('hs')?.value.trim().toLowerCase();
