@@ -921,6 +921,9 @@ function renderHdr(){
     </div>
     <div class="hdr-act">
       <button class="ico-btn" onclick="exportExcel()" title="Export Excel"><i class="ti ti-file-spreadsheet"></i></button>
+      <button class="ico-btn" onclick="backupJSON()" title="Backup podataka"><i class="ti ti-database-export"></i></button>
+      <button class="ico-btn" onclick="document.getElementById('restoreInput').click()" title="Uvezi backup"><i class="ti ti-database-import"></i></button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreJSON(this.files[0]);this.value=''"/>
       <button class="ico-btn ${hidden?'on':''}" onclick="toggleHide()" title="Sakrij iznose"><i class="ti ${hidden?'ti-eye-off':'ti-eye'}"></i></button>
       <button class="ico-btn" onclick="lockApp()" title="Zaključaj"><i class="ti ti-lock"></i></button>
     </div>`;
@@ -946,6 +949,96 @@ function render(){
   else c.innerHTML=renderPregled();
 }
 
+// ── BACKUP ────────────────────────────────────────────────
+function backupJSON(){
+  const backup={
+    version:2,
+    datum:new Date().toISOString(),
+    godina:YEAR,
+    podaci:D,
+  };
+  const json=JSON.stringify(backup,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const datum=new Date().toISOString().slice(0,10);
+  a.href=url;
+  a.download=`Financije_backup_${datum}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('fin_last_backup',Date.now().toString());
+  showToast('Backup preuzet ✓ Spremi na Google Drive!');
+}
+
+function restoreJSON(file){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const backup=JSON.parse(e.target.result);
+      if(!backup.podaci)throw new Error('Neispravan format');
+      D=backup.podaci;
+      // fix all months
+      for(let m=START_MONTH;m<12;m++){
+        if(!D[m])D[m]=emptyMonth();
+        else fixMonth(D[m]);
+      }
+      save();render();
+      showToast('Podaci uspješno vraćeni ✓');
+    }catch(err){
+      showToast('Greška: neispravan backup file');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function checkAutoBackup(){
+  const last=parseInt(localStorage.getItem('fin_last_backup')||'0');
+  const now=Date.now();
+  const h24=24*60*60*1000;
+  if(now-last>h24){
+    // Prikaži podsjetnik nakon 2 sekunde
+    setTimeout(()=>{
+      showBackupReminder();
+    },2000);
+  }
+}
+
+function showBackupReminder(){
+  const last=parseInt(localStorage.getItem('fin_last_backup')||'0');
+  const daysAgo=last>0?Math.floor((Date.now()-last)/(24*60*60*1000)):null;
+  const msg=last===0?'Nikad nisi napravio backup!':
+    daysAgo===1?'Zadnji backup je bio jučer.':
+    `Zadnji backup: ${daysAgo} dana.`;
+
+  // Create reminder overlay
+  const el=document.createElement('div');
+  el.id='backupReminder';
+  el.style.cssText=`position:fixed;bottom:70px;left:12px;right:12px;z-index:998;
+    background:var(--bg0);border-radius:14px;border:.5px solid var(--bd);
+    padding:14px 16px;box-shadow:0 4px 20px rgba(0,0,0,.15);display:flex;flex-direction:column;gap:10px;`;
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-database-export" style="font-size:22px;color:var(--blue)"></i>
+      <div>
+        <div style="font-size:13px;font-weight:500">Podsjetnik za backup</div>
+        <div style="font-size:12px;color:var(--t1)">${msg}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="backupJSON();document.getElementById('backupReminder').remove()"
+        style="flex:1;padding:9px;font-size:13px;border:none;border-radius:8px;background:var(--blue);color:#fff;cursor:pointer;font-weight:500">
+        <i class="ti ti-download"></i> Preuzmi backup
+      </button>
+      <button onclick="document.getElementById('backupReminder').remove()"
+        style="padding:9px 14px;font-size:13px;border:.5px solid var(--bd);border-radius:8px;background:none;cursor:pointer;color:var(--t1)">
+        Kasnije
+      </button>
+    </div>`;
+  document.body.appendChild(el);
+}
+
 // ── INIT ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
   loadData();buildNumpad();
@@ -954,6 +1047,49 @@ window.addEventListener('DOMContentLoaded',()=>{
   resetLock();
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 });
+
+// Override unlock to check backup after login
+const _origUnlock=unlock;
+window.unlock=function(){
+  _origUnlock();
+  checkAutoBackup();
+};
+// Rebind bio and pin to use window.unlock
+async function tryBio(){
+  if(!window.PublicKeyCredential)return;
+  try{
+    const stored=localStorage.getItem('fin_cred');
+    if(!stored){
+      const c=await navigator.credentials.create({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        rp:{name:'Financije'},
+        user:{id:new Uint8Array(16),name:'user',displayName:'Korisnik'},
+        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+        timeout:30000,
+      }});
+      localStorage.setItem('fin_cred',btoa(String.fromCharCode(...new Uint8Array(c.rawId))));
+      window.unlock();
+    }else{
+      const cid=Uint8Array.from(atob(stored),c=>c.charCodeAt(0));
+      await navigator.credentials.get({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{id:cid,type:'public-key'}],
+        userVerification:'required',timeout:30000,
+      }});
+      window.unlock();
+    }
+  }catch(e){if(e.name!=='NotAllowedError')document.getElementById('lerr').textContent='Biometrija nije uspjela.';}
+}
+function checkPin(){
+  const stored=localStorage.getItem('fin_pin');
+  if(!stored||pinEntry===stored)window.unlock();
+  else{
+    document.getElementById('lerr').textContent='Pogrešan PIN. Pokušaj ponovno.';
+    pinEntry='';updateDots();
+    setTimeout(()=>document.getElementById('lerr').textContent='',2000);
+  }
+}
 </script>
 </body>
 </html>
